@@ -10,7 +10,6 @@ MONTH_MASK = "%Y/%m"
 
 @dataclass(init=False)
 default_factory=dict)
-default_factory=list)
 
 @dataclass
 class DictStorage:
