@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
@@ -13,50 +13,58 @@ default_factory=dict)
 default_factory=list)
 
 @dataclass
+class DictStorage:
+    data: dict = field(default_factory=dict)
+
+@dataclass
 class DictRecord(CheckedRecord, DictStorage):
+    data: dict = field(default_factory=dict)
+
     @property
-def day(self) -> datetime.date:
+    def day(self) -> datetime.date:
         date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
         return date.date()
 
     @property
-def done(self) -> bool:
+    def done(self) -> bool:
         return self.data["done"]
 
     @done.setter
-def done(self, value: bool) -> None:
+    def done(self, value: bool) -> None:
         self.data["done"] = value
 
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
+    data: dict = field(default_factory=dict)
+
     @property
-def id(self) -> str:
+    def id(self) -> str:
         if "id" not in self.data:
             self.data["id"] = generate_short_hash(self.name)
         return self.data["id"]
 
     @id.setter
-def id(self, value: str) -> None:
+    def id(self, value: str) -> None:
         self.data["id"] = value
 
     @property
-def name(self) -> str:
+    def name(self) -> str:
         return self.data["name"]
 
     @name.setter
-def name(self, value: str) -> None:
+    def name(self, value: str) -> None:
         self.data["name"] = value
 
     @property
-def star(self) -> bool:
+    def star(self) -> bool:
         return self.data.get("star", False)
 
     @star.setter
-def star(self, value: int) -> None:
+    def star(self, value: int) -> None:
         self.data["star"] = value
 
     @property
-def records(self) -> list[DictRecord]:
+    def records(self) -> List[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
@@ -87,9 +95,10 @@ def records(self) -> list[DictRecord]:
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
+    data: dict = field(default_factory=dict)
 
     @property
-def habits(self) -> list[DictHabit]:
+    def habits(self) -> List[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
         habits.sort(key=lambda x: x.star, reverse=True)
         return habits
@@ -109,7 +118,6 @@ def habits(self) -> list[DictHabit]:
     async def merge(self, other: "DictHabitList") -> "DictHabitList":
         result = set(self.habits).symmetric_difference(set(other.habits))
 
-        # Merge the habit if it exists
         for self_habit in self.habits:
             for other_habit in other.habits:
                 if self_habit == other_habit:
