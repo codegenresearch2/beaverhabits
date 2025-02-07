@@ -1,1 +1,1 @@
-def test_function():\n    assert function_to_test() == expected_result
+import logging\\nimport asyncio\\n\\nlogging.basicConfig(level=logging.INFO)\\n\\nasync def main_function():\\n    # Your main logic here\\n    pass\\n\\nif __name__ == "__main__":\\n    asyncio.run(main_function())
