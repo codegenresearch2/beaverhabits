@@ -83,6 +83,9 @@ class DictHabit(Habit[DictRecord], DictStorage):
         }
         return DictHabit(d)
 
+    def __str__(self) -> str:
+        return self.name
+
     def __eq__(self, other: object) -> bool:
         return isinstance(other, DictHabit) and self.id == other.id
 
