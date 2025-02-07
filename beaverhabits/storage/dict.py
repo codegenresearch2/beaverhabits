@@ -8,9 +8,6 @@ from beaverhabits.utils import generate_short_hash
 DAY_MASK = "%Y-%m-%d"
 MONTH_MASK = "%Y/%m"
 
-@dataclass(init=False)
-default_factory=dict)
-
 @dataclass
 class DictStorage:
     data: dict = field(default_factory=dict, metadata={"exclude": True})
