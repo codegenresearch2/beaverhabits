@@ -14,7 +14,7 @@ default_factory=list)
 
 @dataclass
 class DictStorage:
-    data: dict = field(default_factory=dict)
+    data: dict = field(default_factory=dict, metadata={"exclude": True})
 
 @dataclass
 class DictRecord(CheckedRecord, DictStorage):
