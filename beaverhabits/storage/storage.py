@@ -52,7 +52,6 @@ class Habit[R: CheckedRecord](Protocol):
 
 
 class HabitList[H: Habit](Protocol):
-
     @property
     def habits(self) -> List[H]: ...
 
