@@ -45,6 +45,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["id"] = generate_short_hash(self.name)
         return self.data["id"]
 
+    @id.setter
+    def id(self, value: str) -> None:
+        self.data["id"] = value
+
     @property
     def name(self) -> str:
         return self.data["name"]
@@ -91,3 +95,9 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
+
+    async def merge(self, other: 'DictHabitList') -> 'DictHabitList':
+        for habit in other.habits:
+            if not self.get_habit_by(habit.id):
+                self.add(habit.name)
+        return self
