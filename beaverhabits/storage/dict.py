@@ -72,7 +72,9 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return hash(self.id)
 
     def __str__(self) -> str:
-        return f"{self.name} (ID: {self.id})"
+        return self.id
+
+    __repr__ = __str__
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
