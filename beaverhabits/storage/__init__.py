@@ -1,12 +1,18 @@
 from beaverhabits.configs import StorageType, settings
 from beaverhabits.storage.session_file import SessionDictStorage, SessionStorage
 from beaverhabits.storage.user_db import UserDatabaseStorage
-from beaverhabits.storage.user_file import UserDiskStorage
+from beaverhabits.storage.user_file import UserDiskStorage, UserStorage
 
 
-def get_user_storage():
+# Initialize storage instances
+session_storage = SessionDictStorage()
+user_disk_storage = UserDiskStorage()
+user_database_storage = UserDatabaseStorage()
+
+
+def get_user_dict_storage() -> UserStorage:
     if settings.HABITS_STORAGE == StorageType.USER_DISK:
-        return UserDiskStorage()
+        return user_disk_storage
     elif settings.HABITS_STORAGE == StorageType.USER_DATABASE:
-        return UserDatabaseStorage()
+        return user_database_storage
     raise NotImplementedError('Storage type not implemented')
