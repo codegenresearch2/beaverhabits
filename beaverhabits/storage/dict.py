@@ -1,14 +1,18 @@
 import datetime
+from dataclasses import dataclass, field
 from typing import List, Optional
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
 
 DAY_MASK = "%Y-%m-%d"
+MONTH_MASK = "%Y/%m"
 
+@dataclass
 class DictStorage:
-    data: dict = {"habits": []}
+    data: dict = field(default_factory=dict)
 
+@dataclass
 class DictRecord(CheckedRecord, DictStorage):
     @property
     def day(self) -> datetime.date:
@@ -22,6 +26,7 @@ class DictRecord(CheckedRecord, DictStorage):
     def done(self, value: bool) -> None:
         self.data["done"] = value
 
+@dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
     @property
     def id(self) -> str:
@@ -72,6 +77,16 @@ class DictHabit(Habit[DictRecord], DictStorage):
         })
         return new_habit
 
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, DictHabit) and self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
+
+    def __str__(self) -> str:
+        return self.name
+
+@dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
     def habits(self) -> List[DictHabit]:
