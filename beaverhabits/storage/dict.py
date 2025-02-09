@@ -33,8 +33,7 @@ class DictRecord(CheckedRecord, DictStorage):
 
     @property
     def day(self) -> datetime.date:
-        date_str = self.data["day"]
-        return datetime.datetime.strptime(date_str, DAY_MASK).date()
+        return datetime.datetime.strptime(self.data["day"], DAY_MASK).date()
 
     @property
     def done(self) -> bool:
