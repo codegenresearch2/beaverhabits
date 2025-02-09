@@ -107,3 +107,8 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
+
+    async def merge(self, other: 'DictHabitList') -> 'DictHabitList':
+        merged_list = DictHabitList()
+        merged_list.data["habits"] = self.data["habits"] + other.data["habits"]
+        return merged_list
