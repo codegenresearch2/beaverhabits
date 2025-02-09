@@ -17,10 +17,11 @@ class UserDiskStorage(UserStorage[DictHabitList]):
         return PersistentDict(path, encoding="utf-8")
 
     async def get_user_habit_list(self, user: User) -> Optional[DictHabitList]:
-        d = self._get_persistent_dict(user).get(KEY_NAME)
-        if not d:
+        persistent_dict = self._get_persistent_dict(user)
+        data = persistent_dict.get(KEY_NAME)
+        if not data:
             return None
-        return DictHabitList(d)
+        return DictHabitList(data)
 
     async def save_user_habit_list(self, user: User, habit_list: DictHabitList) -> None:
         persistent_dict = self._get_persistent_dict(user)
