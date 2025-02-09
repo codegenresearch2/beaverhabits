@@ -84,7 +84,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
     @property
     def status(self) -> HabitStatus:
-        return HabitStatus(self.data.get("status", "normal"))
+        return HabitStatus(self.data.get("status", HabitStatus.ACTIVE.value))
 
     @status.setter
     def status(self, value: HabitStatus) -> None:
@@ -101,8 +101,24 @@ class DictHabit(Habit[DictRecord], DictStorage):
         else:
             self.data["records"].append(DictRecord(day=day.strftime(DAY_MASK), done=done))
 
+    async def merge(self, other: "DictHabit") -> "DictHabit":
+        result = set(self.records).union(set(other.records))
+        new_habit_data = {
+            "name": self.name,
+            "records": [record.__dict__ for record in result],
+            "id": self.id,
+            "status": self.status.value
+        }
+        return DictHabit(new_habit_data)
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, DictHabit) and self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
+
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name}<{self.id}>"
 
     __repr__ = __str__
 
@@ -112,7 +128,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
     def habits(self) -> List[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
-        if self.order:
+        if "order" in self.data:
             habits.sort(key=lambda x: self.order.index(str(x.id)) if str(x.id) in self.order else float("inf"))
         return habits
 
