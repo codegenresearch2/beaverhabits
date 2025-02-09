@@ -17,7 +17,10 @@ class DatabasePersistentDict(observables.ObservableDict):
 
     def backup(self) -> None:
         async def backup():
-            await crud.update_user_habit_list(self.user, self)
+            try:
+                await crud.update_user_habit_list(self.user, self)
+            except Exception as e:
+                print(f"Failed to backup user habit list: {e}")
 
         if core.loop:
             background_tasks.create_lazy(backup(), name=self.user.email)
@@ -35,13 +38,16 @@ class UserDatabaseStorage(UserStorage[DictHabitList]):
         return DictHabitList(d)
 
     async def save_user_habit_list(self, user: User, habit_list: DictHabitList) -> None:
-        await crud.update_user_habit_list(user, habit_list.data)
+        try:
+            await crud.update_user_habit_list(user, habit_list.data)
+        except Exception as e:
+            print(f"Failed to save user habit list: {e}")
 
-    async def merge_user_habit_list(
-        self, user: User, other: DictHabitList
-    ) -> DictHabitList:
+    async def merge_user_habit_list(self, user: User, other: DictHabitList) -> DictHabitList:
         current = await self.get_user_habit_list(user)
         if current is None:
             return other
 
-        return await current.merge(other)
+        merged_list = await current.merge(other)
+        await self.save_user_habit_list(user, merged_list)
+        return merged_list
