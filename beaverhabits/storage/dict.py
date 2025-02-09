@@ -6,11 +6,10 @@ from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
 
 DAY_MASK = "%Y-%m-%d"
-MONTH_MASK = "%Y/%m"
 
 @dataclass
 class DictStorage:
-    data: dict = field(default_factory=dict)
+    data: dict = field(default_factory=dict, metadata={"exclude": True})
 
 @dataclass
 class DictRecord(CheckedRecord, DictStorage):
@@ -28,11 +27,7 @@ class DictRecord(CheckedRecord, DictStorage):
 
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
-    @property
-    def id(self) -> str:
-        if "id" not in self.data:
-            self.data["id"] = generate_short_hash(self.data["name"], 6)
-        return self.data["id"]
+    id: str = field(init=False)
 
     @property
     def name(self) -> str:
@@ -55,24 +50,17 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return [DictRecord(d) for d in self.data["records"]]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
-        for record in self.records:
-            if record.day == day:
-                record.done = done
-                return
-        self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
+        record = next((r for r in self.records if r.day == day), None)
+        if record:
+            record.done = done
+        else:
+            self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
 
     async def merge(self, other: "DictHabit") -> "DictHabit":
-        result = set()
-        for record in self.records:
-            if record.done:
-                result.add(record.day)
-        for record in other.records:
-            if record.done:
-                result.add(record.day)
-        result = sorted(list(result))
+        merged_records = set(self.records).symmetric_difference(other.records)
         new_habit = DictHabit({
             "name": self.name,
-            "records": [{"day": day.strftime(DAY_MASK), "done": True} for day in result],
+            "records": [r.data for r in merged_records],
             "id": self.id
         })
         return new_habit
@@ -84,10 +72,12 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return hash(self.id)
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name} (ID: {self.id})"
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
+    order: List[str] = field(default_factory=list, init=False)
+
     @property
     def habits(self) -> List[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
@@ -111,10 +101,6 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
         self.data["habits"].remove(item.data)
 
     async def merge(self, other: "DictHabitList") -> "DictHabitList":
-        result = set(self.habits).symmetric_difference(set(other.habits))
-        for self_habit in self.habits:
-            for other_habit in other.habits:
-                if self_habit == other_habit:
-                    new_habit = await self_habit.merge(other_habit)
-                    result.add(new_habit)
-        return DictHabitList({"habits": [h.data for h in result]})
+        merged_habits = set(self.habits).symmetric_difference(other.habits)
+        new_list = DictHabitList({"habits": [h.data for h in merged_habits]})
+        return new_list
