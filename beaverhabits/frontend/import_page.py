@@ -8,7 +8,7 @@ from beaverhabits.storage.meta import get_root_path
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
-async def import_from_json(text: str) -> HabitList:
+def import_from_json(text: str) -> HabitList:
     try:
         d = json.loads(text)
         habit_list = DictHabitList(d)
@@ -22,8 +22,8 @@ async def import_from_json(text: str) -> HabitList:
         logging.exception("Error during import")
         raise ValueError(f"Error during import: {str(e)}")
 
-async def import_ui_page(user: User):
-    habit_list = await user_storage.get_user_habit_list(user)
+def import_ui_page(user: User):
+    habit_list = user_storage.get_user_habit_list(user)
     existing_habit_names = {habit.name for habit in habit_list.habits} if habit_list else set()
 
     with ui.dialog() as dialog, ui.card().classes("w-64"):
@@ -32,14 +32,14 @@ async def import_ui_page(user: User):
             ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
             ui.button("No", on_click=lambda: dialog.submit("No"))
 
-    result = await dialog
+    result = dialog.submit()
     if result != "Yes":
         return
 
-    async def handle_upload(e: events.UploadEventArguments):
+    def handle_upload(e: events.UploadEventArguments):
         try:
             text = e.content.read().decode("utf-8")
-            to_habit_list = await import_from_json(text)
+            to_habit_list = import_from_json(text)
 
             added_habits = [habit for habit in to_habit_list.habits if habit.name not in existing_habit_names]
             merged_habits = [habit for habit in to_habit_list.habits if habit.name in existing_habit_names]
@@ -48,7 +48,7 @@ async def import_ui_page(user: User):
             logging.info(f"Imported {len(added_habits)} new habits and merged {len(merged_habits)} existing habits")
 
             if added_habits or merged_habits:
-                await user_storage.save_user_habit_list(user, to_habit_list)
+                user_storage.save_user_habit_list(user, to_habit_list)
                 ui.notify(
                     f"Imported {len(added_habits)} new habits and merged {len(merged_habits)} existing habits",
                     position="top",
