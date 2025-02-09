@@ -1,11 +1,9 @@
 from typing import Generic, List, Optional, TypeVar, Protocol
-from uuid import UUID
 import datetime
 
 # Type variables for generics
 R = TypeVar('R', bound='CheckedRecord')
 H = TypeVar('H', bound='Habit')
-
 
 class CheckedRecord(Protocol):
     @property
@@ -34,10 +32,10 @@ class Habit(Generic[R], Protocol):
     def name(self, value: str) -> None: ...
 
     @property
-    def star(self) -> int: ...
+    def star(self) -> bool: ...
 
     @star.setter
-    def star(self, value: int) -> None: ...
+    def star(self, value: bool) -> None: ...
 
     @property
     def records(self) -> List[R]: ...
@@ -79,6 +77,12 @@ class UserStorage(Protocol):
     async def save_user_habit_list(self, user: User, habit_list: HabitList) -> None: ...
 
     async def merge_user_habit_list(self, user: User, habit_list: HabitList) -> None: ...
+
+
+class User:
+    def __init__(self, id: int, name: str):
+        self.id = id
+        self.name = name
 
 
 class HabitManager:
