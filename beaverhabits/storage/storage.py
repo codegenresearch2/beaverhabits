@@ -20,13 +20,13 @@ class CheckedRecord(Protocol):
         ...
 
     def __str__(self):
-        return f"{self.day} {'[x]' if self.done else '[ ]'}"
+        return f"{self.day} [{'x' if self.done else ' '}]"
 
     __repr__ = __str__
 
 class Habit[R: CheckedRecord](Protocol):
     @property
-    def id(self) -> str | int:
+    def id(self) -> str:
         ...
 
     @property
