@@ -1,1 +1,1 @@
-import os\"""Return a short string.""""}
+import os"
