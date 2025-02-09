@@ -31,59 +31,74 @@ class DictRecord(CheckedRecord, DictStorage):
     d3: [x]              d3: [x]            d3: [ ]
     """
 
-    async def load_day(self) -> datetime.date:
-        date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
-        return date.date()
+    @property
+    def day(self) -> datetime.date:
+        date_str = self.data["day"]
+        return datetime.datetime.strptime(date_str, DAY_MASK).date()
 
-    async def load_done(self) -> bool:
+    @property
+    def done(self) -> bool:
         return self.data["done"]
 
-    async def save_done(self, value: bool) -> None:
+    @done.setter
+    def done(self, value: bool) -> None:
         self.data["done"] = value
 
 
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
-    async def load_id(self) -> str:
+    @property
+    def id(self) -> str:
         if "id" not in self.data:
             self.data["id"] = generate_short_hash(self.data["name"])
         return self.data["id"]
 
-    async def load_name(self) -> str:
+    @property
+    def name(self) -> str:
         return self.data["name"]
 
-    async def save_name(self, value: str) -> None:
+    @name.setter
+    def name(self, value: str) -> None:
         self.data["name"] = value
 
-    async def load_star(self) -> bool:
+    @property
+    def star(self) -> bool:
         return self.data.get("star", False)
 
-    async def save_star(self, value: int) -> None:
+    @star.setter
+    def star(self, value: int) -> None:
         self.data["star"] = value
 
-    async def load_records(self) -> list[DictRecord]:
+    @property
+    def records(self) -> list[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
+    @property
+    def ticked_days(self) -> list[datetime.date]:
+        return [r.day for r in self.records if r.done]
+
     async def tick(self, day: datetime.date, done: bool) -> None:
-        records = await self.load_records()
-        record = next((r for r in records if r.day == day), None)
+        record = next((r for r in self.records if r.day == day), None)
         if record:
             record.done = done
         else:
-            data = {"day": day.strftime(DAY_MASK), "done": done}
-            self.data["records"].append(data)
+            self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
 
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
-    async def load_habits(self) -> list[DictHabit]:
+    def __post_init__(self):
+        if "habits" not in self.data:
+            self.data["habits"] = []
+
+    @property
+    def habits(self) -> list[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
         habits.sort(key=lambda x: x.star, reverse=True)
         return habits
 
     async def get_habit_by(self, habit_id: str) -> Optional[DictHabit]:
-        habits = await self.load_habits()
-        for habit in habits:
+        for habit in self.habits:
             if habit.id == habit_id:
                 return habit
 
