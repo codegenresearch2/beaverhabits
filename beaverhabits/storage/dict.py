@@ -71,13 +71,13 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
     @property
     def records(self) -> List[DictRecord]:
-        return [DictRecord(d) for d in self.data["records"]]
+        return [DictRecord(d) for d in self.data.get("records", [])]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
         record = next((r for r in self.records if r.day == day), None)
         if record is None:
             new_record = DictRecord({"day": day.strftime(DAY_MASK), "done": done})
-            self.data["records"].append(new_record)
+            self.data.setdefault("records", []).append(new_record)
         else:
             record.done = done
 
@@ -94,7 +94,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
     def habits(self) -> List[DictHabit]:
-        habits = [DictHabit(d) for d in self.data["habits"]]
+        habits = [DictHabit(d) for d in self.data.get("habits", [])]
         habits.sort(key=lambda x: x.star, reverse=True)
         return habits
 
@@ -105,14 +105,15 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     async def add(self, name: str) -> None:
         d = {"name": name, "records": [], "id": generate_short_hash(name), "star": False}
-        self.data["habits"].append(d)
+        self.data.setdefault("habits", []).append(d)
 
     async def remove(self, item: DictHabit) -> None:
-        self.data["habits"].remove(item.data)
+        if "habits" in self.data:
+            self.data["habits"].remove(item.data)
 
     def merge(self, other: 'DictHabitList') -> 'DictHabitList':
         merged_list = DictHabitList()
-        merged_list.data["habits"] = self.data["habits"] + other.data["habits"]
+        merged_list.data["habits"] = self.data.get("habits", []) + other.data.get("habits", [])
         return merged_list
 
 
@@ -128,5 +129,5 @@ class UserStorageImpl(UserStorage[DictHabitList]):
     async def merge_user_habit_list(self, user: User, other: DictHabitList) -> DictHabitList:
         # Implementation to merge habit lists for a user
         merged_list = DictHabitList()
-        merged_list.data["habits"] = self.data["habits"] + other.data["habits"]
+        merged_list.data["habits"] = self.data.get("habits", []) + other.data.get("habits", [])
         return merged_list
