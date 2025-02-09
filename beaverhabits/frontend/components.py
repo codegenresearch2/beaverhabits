@@ -1,1 +1,1 @@
-def short_function():"""Return a short string.""""}
+import os\"""Return a short string.""""}
