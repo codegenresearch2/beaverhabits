@@ -42,6 +42,9 @@ async def item_drop(e, habit_list: HabitList):
     habit_list.order = [str(x.id) for x in habits]
     logger.info(f'Item drop: {e.args['id']} -> {e.args['new_index']}')  # Updated logging message
 
+    # Ensure the parent slot is not None before updating status
+    assert dragged.parent_slot is not None, 'Dragged element has no parent slot'
+
     # Update habit status based on new position
     for idx, habit_id in enumerate(habit_list.order):
         habit = habit_list.habits.get(habit_id)
@@ -84,15 +87,4 @@ def order_page_ui(habit_list: HabitList):
                     add.classes('col-span-12').props('borderless')
 
     ui.add_body_html(
-        r'''<script type="module">
-        import '/statics/libs/sortable.min.js';
-        document.addEventListener('DOMContentLoaded', () => {
-            Sortable.create(document.querySelector('.sortable'), {
-                animation: 150,
-                ghostClass: 'opacity-50',
-                onEnd: (evt) => emitEvent("item_drop", {id: evt.item.id, new_index: evt.newIndex }),
-            });
-        });
-        </script>'''
-    )
-    ui.on('item_drop', lambda e: item_drop(e, habit_list))
+        r'''<script type=
