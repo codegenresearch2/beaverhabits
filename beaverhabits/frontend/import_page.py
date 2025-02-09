@@ -11,7 +11,7 @@ from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
 
-async def import_from_json(text: str) -> HabitList:
+def import_from_json(text: str) -> HabitList:
     d = json.loads(text)
     habit_list = DictHabitList(d)
     if not habit_list.habits:
@@ -19,7 +19,7 @@ async def import_from_json(text: str) -> HabitList:
     return habit_list
 
 
-async def import_ui_page(user: User):
+def import_ui_page(user: User):
     with ui.dialog() as dialog, ui.card().classes("w-64"):
         ui.label("Are you sure? All your current habits will be replaced.")
         with ui.row():
@@ -33,7 +33,7 @@ async def import_ui_page(user: User):
                 return
 
             text = e.content.read().decode("utf-8")
-            to_habit_list = await import_from_json(text)
+            to_habit_list = import_from_json(text)
             existing_habit_list = await user_storage.get_user_habit_list(user)
 
             # Use sets for added and merged habits to simplify logic
