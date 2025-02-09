@@ -16,7 +16,7 @@ from beaverhabits.utils import generate_short_hash
 user_storage = get_user_storage()
 
 
-def dummy_habit_list(days: List[datetime.date]): 
+def dummy_habit_list(days: List[datetime.date]):
     pick = lambda: random.randint(0, 3) == 0
     items = [
         {
