@@ -15,7 +15,7 @@ class CheckedRecord(Protocol):
     def done(self, value: bool) -> None: ...
 
     def __str__(self):
-        return f"{self.day} {'[x]' if self.done else '[ ]'}"
+        return f"{self.day} [{'x' if self.done else ' '}]"
 
     __repr__ = __str__
 
