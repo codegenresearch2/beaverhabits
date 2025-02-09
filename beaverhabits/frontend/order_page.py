@@ -10,6 +10,7 @@ from beaverhabits.frontend.components import (
 from beaverhabits.frontend.layout import layout
 from beaverhabits.logging import logger
 from beaverhabits.storage.storage import HabitList
+from beaverhabits.storage.meta import HabitStatus
 
 
 async def item_drop(e, habit_list: HabitList):
@@ -34,7 +35,7 @@ async def item_drop(e, habit_list: HabitList):
 def add_ui(habit_list: HabitList):
     with ui.column().classes("sortable").classes("gap-3"):
         for item in habit_list.habits:
-            if item.status == "active":
+            if item.status == HabitStatus.ACTIVE:
                 with components.HabitOrderCard(item):
                     with ui.grid(columns=12, rows=1).classes("gap-0 items-center"):
                         name = HabitNameInput(item)
