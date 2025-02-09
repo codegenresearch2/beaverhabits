@@ -34,8 +34,7 @@ class DictRecord(CheckedRecord, DictStorage):
 
     @property
     def day(self) -> datetime.date:
-        date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
-        return date.date()
+        return datetime.datetime.strptime(self.data["day"], DAY_MASK).date()
 
     @property
     def done(self) -> bool:
@@ -78,8 +77,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         if record := next((r for r in self.records if r.day == day), None):
             record.done = done
         else:
-            data = {"day": day.strftime(DAY_MASK), "done": done}
-            self.data["records"].append(data)
+            self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, DictHabit):
