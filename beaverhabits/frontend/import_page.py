@@ -26,14 +26,19 @@ def import_ui_page(user: User):
             to_habit_list = await import_from_json(text)
             existing_habit_list = await user_storage.get_user_habit_list(user)
 
-            # Use sets for added and merged habits to simplify logic
-            added_habits_set = {habit['id'] for habit in to_habit_list.habits}
-            merged_habits_set = {habit['id'] for habit in existing_habit_list.habits} & added_habits_set
-            unchanged_habits_set = added_habits_set - merged_habits_set
+            if existing_habit_list is None:
+                existing_habit_list = DictHabitList({'habits': []})
 
-            added_habits = [habit for habit in to_habit_list.habits if habit['id'] in added_habits_set]
-            merged_habits = [habit for habit in to_habit_list.habits if habit['id'] in merged_habits_set]
-            unchanged_habits = [habit for habit in to_habit_list.habits if habit['id'] in unchanged_habits_set]
+            # Use sets for added and merged habits to simplify logic
+            existing_ids = {habit['id'] for habit in existing_habit_list.habits}
+            new_ids = {habit['id'] for habit in to_habit_list.habits}
+            added_ids = new_ids - existing_ids
+            merged_ids = existing_ids & new_ids
+            unchanged_ids = new_ids - added_ids - merged_ids
+
+            added_habits = [habit for habit in to_habit_list.habits if habit['id'] in added_ids]
+            merged_habits = [habit for habit in to_habit_list.habits if habit['id'] in merged_ids]
+            unchanged_habits = [habit for habit in to_habit_list.habits if habit['id'] in unchanged_ids]
 
             # Log the results
             logging.info(f"Added {len(added_habits)} habits, Merged {len(merged_habits)} habits, Unchanged {len(unchanged_habits)} habits")
