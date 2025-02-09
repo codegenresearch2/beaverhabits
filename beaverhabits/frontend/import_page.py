@@ -8,7 +8,7 @@ from beaverhabits.storage.meta import get_root_path
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
-def import_from_json(text: str) -> HabitList:
+async def import_from_json(text: str) -> HabitList:
     try:
         d = json.loads(text)
         habit_list = DictHabitList(d)
@@ -22,7 +22,11 @@ def import_from_json(text: str) -> HabitList:
         logging.exception(f"An error occurred while importing habits: {e}")
         raise
 
-def import_ui_page(user: User):
+async def import_ui_page(user: User):
+    current_habit_list = await user_storage.get_user_habit_list(user)
+    if current_habit_list is None:
+        current_habit_list = DictHabitList({"habits": []})
+
     with ui.dialog() as dialog, ui.card().classes("w-64"):
         ui.label("Are you sure? All your current habits will be replaced.")
         with ui.row():
@@ -36,8 +40,30 @@ def import_ui_page(user: User):
                 return
 
             text = e.content.read().decode("utf-8")
-            to_habit_list = import_from_json(text)
-            await user_storage.save_user_habit_list(user, to_habit_list)
+            to_habit_list = await import_from_json(text)
+
+            # Determine what habits will be added, merged, or unchanged
+            added_habits = []
+            merged_habits = []
+            unchanged_habits = []
+
+            for new_habit in to_habit_list.habits:
+                existing_habit = current_habit_list.get_habit_by_id(new_habit['id'])
+                if existing_habit is None:
+                    added_habits.append(new_habit)
+                else:
+                    merged_habit = existing_habit.merge(new_habit)
+                    merged_habits.append(merged_habit)
+                    unchanged_habits.append(existing_habit)
+
+            # Update the user's habit list
+            await user_storage.save_user_habit_list(user, current_habit_list)
+
+            # Log the results
+            logging.info(f"Added {len(added_habits)} habits")
+            logging.info(f"Merged {len(merged_habits)} habits")
+            logging.info(f"Unchanged {len(unchanged_habits)} habits")
+
             ui.notify(
                 f"Imported {len(to_habit_list.habits)} habits",
                 position="top",
