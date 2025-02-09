@@ -74,10 +74,12 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return [DictRecord(d) for d in self.data["records"]]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
-        if record := next((r for r in self.records if r.day == day), None):
-            record.done = done
+        record = next((r for r in self.records if r.day == day), None)
+        if record is None:
+            new_record = DictRecord({"day": day.strftime(DAY_MASK), "done": done})
+            self.data["records"].append(new_record)
         else:
-            self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
+            record.done = done
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, DictHabit):
