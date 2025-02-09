@@ -8,6 +8,11 @@ from beaverhabits.storage.user_file import UserDiskStorage, UserStorage
 session_storage = SessionDictStorage()
 user_disk_storage = UserDiskStorage()
 user_database_storage = UserDatabaseStorage()
+sqlite_storage = None
+
+
+def get_sessions_storage() -> SessionStorage:
+    return session_storage
 
 
 def get_user_dict_storage() -> UserStorage:
