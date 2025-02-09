@@ -40,7 +40,7 @@ async def item_drop(e, habit_list: HabitList):
 
     habits = [x.habit for x in dragged.parent_slot.children if isinstance(x, components.HabitOrderCard) and x.habit]
     habit_list.order = [str(x.id) for x in habits]
-    logger.info(f'New order: {habits}')
+    logger.info(f'Item drop: {e.args['id']} -> {e.args['new_index']}')  # Updated logging message
 
     # Update habit status based on new position
     for idx, habit_id in enumerate(habit_list.order):
@@ -65,6 +65,12 @@ def add_ui(habit_list: HabitList):
 
                     delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
                     delete.classes('col-span-1')
+
+                    # Conditionally render based on habit status
+                    if habit_list.habits[item.name].status == 'archived':
+                        ui.label(item.name).classes('text-gray-500 line-through')
+                    else:
+                        name
 
 
 def order_page_ui(habit_list: HabitList):
