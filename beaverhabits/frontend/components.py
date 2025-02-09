@@ -84,7 +84,6 @@ class HabitStarCheckbox(ui.checkbox):
         self.bind_value(habit, 'star')
         self.props(f'checked-icon="{icons.STAR_FULL}" unchecked-icon="{icons.STAR}")
         self.props('flat fab-mini keep-color color=grey-8')
-
         self.refresh = refresh
 
     async def _async_task(self, e: events.ValueChangeEventArguments):
@@ -133,15 +132,13 @@ class HabitDateInput(ui.date):
         self.init = True
         self.default_date = today
         super().__init__(self.ticked_days, on_change=self._async_task)
-
         self.props('multiple')
         self.props('minimal flat')
         self.props(f'default-year-month={self.today.strftime(MONTH_MASK)}')
         qdate_week_first_day = (settings.FIRST_DAY_OF_WEEK + 1) % 7
-        self.props(f'first-day-of-week=\"{qdate_week_first_day}\"')
+        self.props(f'first-day-of-week="{qdate_week_first_day}"')
         self.props('today-btn')
         self.classes('shadow-none')
-
         self.bind_value_from(self, 'ticked_days')
 
     @property
@@ -185,7 +182,6 @@ class CalendarHeatmap:
     def generate_calendar_headers(days: list[datetime.date]) -> list[str]:
         if not days:
             return []
-
         result = []
         month = year = None
         for day in days:
