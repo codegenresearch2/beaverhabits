@@ -1,7 +1,12 @@
 import datetime
 from typing import List, Optional, Protocol
+import logging
 
 from beaverhabits.app.db import User
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class CheckedRecord(Protocol):
@@ -62,6 +67,22 @@ class HabitList[H: Habit](Protocol):
 
     async def get_habit_by(self, habit_id: str) -> Optional[H]: ...
 
+    async def merge(self, other: "HabitList[H]") -> "HabitList[H]":
+        logger.info("Merging habit lists.")
+        self_habits = set(self.habits)
+        other_habits = set(other.habits)
+        merged_habits = self_habits.symmetric_difference(other_habits)
+
+        for habit in self_habits:
+            if habit in other_habits:
+                await habit.merge(other_habits.pop())
+                merged_habits.remove(habit)
+
+        for habit in other_habits:
+            merged_habits.add(habit)
+
+        return HabitList[H](habits=list(merged_habits))
+
 
 class SessionStorage[L: HabitList](Protocol):
     def get_user_habit_list(self) -> Optional[L]: ...
@@ -73,5 +94,3 @@ class UserStorage[L: HabitList](Protocol):
     async def get_user_habit_list(self, user: User) -> Optional[L]: ...
 
     async def save_user_habit_list(self, user: User, habit_list: L) -> None: ...
-
-    async def merge_user_habit_list(self, user: User, other: L) -> L: ...
