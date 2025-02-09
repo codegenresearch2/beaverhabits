@@ -1,7 +1,11 @@
 import datetime
-from typing import List, Optional, Protocol
+from typing import List, Optional, Protocol, TypeVar
 
 from beaverhabits.app.db import User
+
+# Type variables for generics
+R = TypeVar('R', bound='CheckedRecord')
+H = TypeVar('H', bound='Habit')
 
 
 class CheckedRecord(Protocol):
@@ -37,7 +41,7 @@ class Habit(Protocol):
     def star(self, value: bool) -> None: ...
 
     @property
-    def records(self) -> List[CheckedRecord]: ...
+    def records(self) -> List[R]: ...
 
     @property
     def ticked_days(self) -> list[datetime.date]:
@@ -53,13 +57,13 @@ class Habit(Protocol):
 
 class HabitList(Protocol):
     @property
-    def habits(self) -> List[Habit]: ...
+    def habits(self) -> List[H]: ...
 
     async def add(self, name: str) -> None: ...
 
-    async def remove(self, item: Habit) -> None: ...
+    async def remove(self, item: H) -> None: ...
 
-    async def get_habit_by(self, habit_id: str) -> Optional[Habit]: ...
+    async def get_habit_by(self, habit_id: str) -> Optional[H]: ...
 
     async def merge(self, other: "HabitList") -> "HabitList": ...
 
