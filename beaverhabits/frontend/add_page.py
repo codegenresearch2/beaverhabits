@@ -32,5 +32,5 @@ def add_page_ui(habit_list: HabitList):
                 add = HabitAddButton(habit_list, add_ui.refresh)
                 add.classes("col-span-7")
                 with ui.card().classes("p-3 gap-0 no-shadow items-center w-full max-width: 350px"):
-                    add_card = HabitAddButton(add)
+                    add_card = HabitAddButton(add, add_ui.refresh) # Corrected instantiation with refresh argument
                     add_card.classes("col-span-7")
