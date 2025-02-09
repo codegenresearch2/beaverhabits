@@ -18,6 +18,6 @@ def get_sessions_storage() -> SessionStorage:
 def get_user_dict_storage() -> UserStorage:
     if settings.HABITS_STORAGE == StorageType.USER_DISK:
         return user_disk_storage
-    elif settings.HABITS_STORAGE == StorageType.USER_DATABASE:
+    if settings.HABITS_STORAGE == StorageType.USER_DATABASE:
         return user_database_storage
     raise NotImplementedError('Storage type not implemented')
