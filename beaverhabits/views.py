@@ -32,12 +32,12 @@ def dummy_habit_list(days: List[datetime.date]) -> DictHabitList:
     return DictHabitList({'habits': items})
 
 
-sync def get_session_habit_list() -> HabitList | None:
+def get_session_habit_list() -> HabitList | None:
     return session_storage.get_user_habit_list()
 
 
 async def get_session_habit(habit_id: str) -> Habit:
-    habit_list = await get_session_habit_list()
+    habit_list = get_session_habit_list()
     if habit_list is None:
         raise HTTPException(status_code=404, detail='Habit list not found')
 
@@ -49,11 +49,11 @@ async def get_session_habit(habit_id: str) -> Habit:
 
 
 async def get_or_create_session_habit_list(days: List[datetime.date]) -> HabitList:
-    if (habit_list := await get_session_habit_list()) is not None:
+    if (habit_list := get_session_habit_list()) is not None:
         return habit_list
 
     habit_list = dummy_habit_list(days)
-    await session_storage.save_user_habit_list(habit_list)
+    session_storage.save_user_habit_list(habit_list)
     return habit_list
 
 
