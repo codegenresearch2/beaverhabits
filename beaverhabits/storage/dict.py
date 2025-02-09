@@ -33,8 +33,7 @@ class DictRecord(CheckedRecord, DictStorage):
 
     @property
     def day(self) -> datetime.date:
-        parsed_day = datetime.datetime.strptime(self.data["day"], DAY_MASK).date()
-        return parsed_day
+        return datetime.datetime.strptime(self.data["day"], DAY_MASK).date()
 
     @property
     def done(self) -> bool:
@@ -52,10 +51,6 @@ class DictHabit(Habit[DictRecord], DictStorage):
         if "id" not in self.data:
             self.data["id"] = generate_short_hash(self.data["name"])
         return self.data["id"]
-
-    @id.setter
-    def id(self, value: str) -> None:
-        self.data["id"] = value
 
     @property
     def name(self) -> str:
@@ -89,10 +84,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, DictHabit) and self.id == other.id and self.name == other.name
+        return isinstance(other, DictHabit) and self.id == other.id
 
     def __hash__(self) -> int:
-        return hash((self.id, self.name))
+        return hash(self.id)
 
 
 @dataclass
