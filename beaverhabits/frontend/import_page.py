@@ -1,4 +1,5 @@
 import json
+import logging
 from nicegui import events, ui
 from beaverhabits.app.db import User
 from beaverhabits.frontend.components import menu_header
@@ -8,13 +9,23 @@ from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
 def import_from_json(text: str) -> HabitList:
-    d = json.loads(text)
-    habit_list = DictHabitList(d)
-    if not habit_list.habits:
-        raise ValueError("No habits found")
-    return habit_list
+    try:
+        d = json.loads(text)
+        habit_list = DictHabitList(d)
+        if not habit_list.habits:
+            raise ValueError("No habits found")
+        return habit_list
+    except json.JSONDecodeError:
+        logging.exception("Invalid JSON during import")
+        raise
+    except Exception as e:
+        logging.exception("Error during import")
+        raise ValueError(f"Error during import: {str(e)}")
 
-def import_ui_page(user: User):
+async def import_ui_page(user: User):
+    habit_list = await user_storage.get_user_habit_list(user)
+    existing_habit_names = {habit.name for habit in habit_list.habits} if habit_list else set()
+
     with ui.dialog() as dialog, ui.card().classes("w-64"):
         ui.label("Are you sure? All your current habits will be replaced.")
         with ui.row():
@@ -29,12 +40,28 @@ def import_ui_page(user: User):
 
             text = e.content.read().decode("utf-8")
             to_habit_list = import_from_json(text)
-            await user_storage.save_user_habit_list(user, to_habit_list)
-            ui.notify(
-                f"Imported {len(to_habit_list.habits)} habits",
-                position="top",
-                color="positive",
-            )
+
+            added_habits = []
+            merged_habits = []
+            unchanged_habits = []
+
+            for habit in to_habit_list.habits:
+                if habit.name not in existing_habit_names:
+                    added_habits.append(habit)
+                else:
+                    merged_habits.append(habit)
+                    existing_habit_names.remove(habit.name)
+                unchanged_habits.append(habit)
+
+            if added_habits or merged_habits:
+                ui.notify(
+                    f"Imported {len(added_habits)} new habits and merged {len(merged_habits)} existing habits",
+                    position="top",
+                    color="positive",
+                )
+            else:
+                ui.notify("No new habits to add or merge.", position="top", color="neutral")
+
         except json.JSONDecodeError:
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
         except Exception as error:
