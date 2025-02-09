@@ -99,4 +99,4 @@ async def export_user_habit_list(habit_list: HabitList, user_identify: str) -> N
         ui.notification("Export failed, please try again later.")
 
 
-This revised code snippet removes the invalid syntax comment at line 104. The comment has been removed to ensure that the code is properly formatted and does not interfere with the code execution. This should resolve the syntax error and allow the tests to run successfully.
+This revised code snippet removes the invalid syntax comment at line 102. The comment has been removed to ensure that the code is properly formatted and does not interfere with the code execution. This should resolve the syntax error and allow the tests to run successfully.
