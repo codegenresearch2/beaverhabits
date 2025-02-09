@@ -13,20 +13,20 @@ from beaverhabits.storage.storage import HabitList
 
 
 async def item_drop(e, habit_list: HabitList):
-    # Move element
     elements = ui.context.client.elements
     dragged = elements[int(e.args["id"][1:])]
     dragged.move(target_index=e.args["new_index"])
 
-    # Update habit order
-    assert dragged.parent_slot is not None
     habits = [
         x.habit
         for x in dragged.parent_slot.children
         if isinstance(x, components.HabitOrderCard) and x.habit
     ]
     habit_list.order = [str(x.id) for x in habits]
-    logger.info(f"New order: {habits}")
+    logger.info(f"Item {dragged.id} dropped to index {e.args['new_index']}")
+
+    # Refresh UI
+    add_ui.refresh()
 
 
 @ui.refreshable
