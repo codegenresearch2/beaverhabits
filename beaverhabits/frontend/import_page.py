@@ -11,7 +11,7 @@ from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
 
-def import_from_json(text: str) -> HabitList:
+async def import_from_json(text: str) -> HabitList:
     d = json.loads(text)
     habit_list = DictHabitList(d)
     if not habit_list.habits:
@@ -33,19 +33,17 @@ async def import_ui_page(user: User):
                 return
 
             text = e.content.read().decode("utf-8")
-            to_habit_list = import_from_json(text)
+            to_habit_list = await import_from_json(text)
             existing_habit_list = await user_storage.get_user_habit_list(user)
 
-            # Compare and determine which habits will be added, merged, or unchanged
-            added_habits = []
-            merged_habits = []
-            unchanged_habits = []
-            for habit in to_habit_list.habits:
-                if habit['id'] not in [h['id'] for h in existing_habit_list.habits]:
-                    added_habits.append(habit)
-                else:
-                    merged_habits.append(habit)
-                    unchanged_habits.append(habit)
+            # Use sets for added and merged habits to simplify logic
+            added_habits_set = set(habit['id'] for habit in to_habit_list.habits)
+            merged_habits_set = set(habit['id'] for habit in existing_habit_list.habits) & added_habits_set
+            unchanged_habits_set = added_habits_set - merged_habits_set
+
+            added_habits = [habit for habit in to_habit_list.habits if habit['id'] in added_habits_set]
+            merged_habits = [habit for habit in to_habit_list.habits if habit['id'] in merged_habits_set]
+            unchanged_habits = [habit for habit in to_habit_list.habits if habit['id'] in unchanged_habits_set]
 
             # Log the results
             logging.info(f"Added {len(added_habits)} habits")
