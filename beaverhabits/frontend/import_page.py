@@ -8,34 +8,17 @@ from beaverhabits.storage.meta import get_root_path
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
-async def import_from_json(text: str) -> HabitList:
-    try:
-        habit_list = DictHabitList(json.loads(text))
-        if not habit_list.habits:
-            raise ValueError("No habits found")
-        return habit_list
-    except json.JSONDecodeError:
-        logging.exception("Invalid JSON encountered during import")
-        raise
-    except Exception as e:
-        logging.exception(f"An error occurred while importing habits: {e}")
-        raise
+def import_from_json(text: str) -> HabitList:
+    habit_list = DictHabitList(json.loads(text))
+    if not habit_list.habits:
+        raise ValueError("No habits found")
+    return habit_list
 
 def import_ui_page(user: User):
-    with ui.dialog() as dialog, ui.card().classes("w-64"):
-        ui.label("Are you sure? All your current habits will be replaced.")
-        with ui.row():
-            ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
-            ui.button("No", on_click=lambda: dialog.submit("No"))
-
     async def handle_upload(e: events.UploadEventArguments):
+        text = e.content.read().decode("utf-8")
         try:
-            result = await dialog
-            if result != "Yes":
-                return
-
-            text = e.content.read().decode("utf-8")
-            to_habit_list = await import_from_json(text)
+            to_habit_list = import_from_json(text)
 
             current_habit_list = user_storage.get_user_habit_list(user)
             if current_habit_list is None:
@@ -53,11 +36,15 @@ def import_ui_page(user: User):
             merged_habits = [habit for habit in to_habit_list.habits if habit['id'] in merged_ids]
             unchanged_habits = [habit for habit in current_habit_list.habits if habit['id'] in unchanged_ids]
 
-            # Update the user's habit list
-            await user_storage.save_user_habit_list(user, to_habit_list)
-
             # Log the results
             logging.info(f"Added {len(added_habits)} habits, merged {len(merged_habits)} habits, unchanged {len(unchanged_habits)} habits")
+
+            # Merge the new habits with the existing habits
+            if added_habits or merged_habits:
+                updated_habit_list = await user_storage.merge_user_habit_list(user, to_habit_list)
+                await user_storage.save_user_habit_list(user, updated_habit_list)
+            else:
+                ui.notify("No new habits added.", position="top", color="neutral")
 
             ui.notify(
                 f"Imported {len(to_habit_list.habits)} habits",
