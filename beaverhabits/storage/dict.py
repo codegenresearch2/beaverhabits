@@ -102,10 +102,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["records"].append(DictRecord(day=day.strftime(DAY_MASK), done=done))
 
     async def merge(self, other: "DictHabit") -> "DictHabit":
-        result = set(self.records).union(set(other.records))
+        result_records = set(self.records).union(set(other.records))
         new_habit_data = {
             "name": self.name,
-            "records": [record.__dict__ for record in result],
+            "records": [record.__dict__ for record in result_records],
             "id": self.id,
             "status": self.status.value
         }
