@@ -1,4 +1,5 @@
 import json
+import logging
 from nicegui import events, ui
 from beaverhabits.app.db import User
 from beaverhabits.frontend.components import menu_header
@@ -8,11 +9,18 @@ from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
 def import_from_json(text: str) -> HabitList:
-    d = json.loads(text)
-    habit_list = DictHabitList(d)
-    if not habit_list.habits:
-        raise ValueError("No habits found")
-    return habit_list
+    try:
+        d = json.loads(text)
+        habit_list = DictHabitList(d)
+        if not habit_list.habits:
+            raise ValueError("No habits found")
+        return habit_list
+    except json.JSONDecodeError:
+        logging.exception("Invalid JSON encountered during import")
+        raise
+    except Exception as e:
+        logging.exception(f"An error occurred while importing habits: {e}")
+        raise
 
 def import_ui_page(user: User):
     with ui.dialog() as dialog, ui.card().classes("w-64"):
@@ -38,6 +46,7 @@ def import_ui_page(user: User):
         except json.JSONDecodeError:
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
         except Exception as error:
+            logging.exception(f"An error occurred during import: {error}")
             ui.notify(str(error), color="negative", position="top")
 
     menu_header("Import", target=get_root_path())
