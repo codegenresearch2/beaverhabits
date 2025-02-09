@@ -26,7 +26,7 @@ class CheckedRecord(Protocol):
 
 class Habit[R: CheckedRecord](Protocol):
     @property
-    def id(self) -> str:
+    def id(self) -> str | int:
         ...
 
     @property
