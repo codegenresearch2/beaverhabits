@@ -20,4 +20,4 @@ def get_user_dict_storage() -> UserStorage:
         return user_disk_storage
     if settings.HABITS_STORAGE == StorageType.USER_DATABASE:
         return user_database_storage
-    raise NotImplementedError('Storage type not implemented')
+    raise NotImplementedError("Storage type not implemented")
