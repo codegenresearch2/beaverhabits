@@ -16,9 +16,10 @@ from beaverhabits.utils import generate_short_hash
 user_storage = get_user_dict_storage()
 
 
-def dummy_habit_list(days: List[datetime.date]):
+def dummy_habit_list(days: List[datetime.date]) -> DictHabitList:
+    # Generate a random habit list
     pick = lambda: random.randint(0, 3) == 0
-    items = [
+    habits = [
         {
             'id': generate_short_hash(name),
             'name': name,
@@ -29,7 +30,7 @@ def dummy_habit_list(days: List[datetime.date]):
         }
         for name in ('Order pizz', 'Running', 'Table Tennis', 'Clean', 'Call mom')
     ]
-    return DictHabitList({'habits': items})
+    return DictHabitList({'habits': habits})
 
 
 # Get the session habit list
@@ -91,6 +92,7 @@ async def get_or_create_user_habit_list(user: User, days: List[datetime.date]) -
 
 # Export the user's habit list
 async def export_user_habit_list(habit_list: HabitList, user_identify: str) -> None:
+    # Export the habit list to a JSON file
     if isinstance(habit_list, DictHabitList):
         data = {
             'user_email': user_identify,
