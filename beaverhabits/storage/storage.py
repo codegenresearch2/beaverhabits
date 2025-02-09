@@ -1,14 +1,14 @@
 import datetime
+from enum import Enum
 from typing import List, Optional, Protocol
 
 from beaverhabits.app.db import User
-from enum import Enum
 
 
 class HabitStatus(Enum):
-    NORMAL = 'normal'
-    ARCHIVE = 'archive'
-    SOFT_DELETE = 'soft_delete'
+    ACTIVE = 'normal'
+    ARCHIVED = 'archive'
+    SOFT_DELETED = 'soft_delete'
 
 
 class CheckedRecord(Protocol):
