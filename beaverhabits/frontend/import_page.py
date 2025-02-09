@@ -1,4 +1,5 @@
 import json
+import logging
 
 from nicegui import events, ui
 
@@ -18,7 +19,7 @@ def import_from_json(text: str) -> HabitList:
     return habit_list
 
 
-def import_ui_page(user: User):
+async def import_ui_page(user: User):
     with ui.dialog() as dialog, ui.card().classes("w-64"):
         ui.label("Are you sure? All your current habits will be replaced.")
         with ui.row():
@@ -33,6 +34,25 @@ def import_ui_page(user: User):
 
             text = e.content.read().decode("utf-8")
             to_habit_list = import_from_json(text)
+            existing_habit_list = await user_storage.get_user_habit_list(user)
+
+            # Compare and determine which habits will be added, merged, or unchanged
+            added_habits = []
+            merged_habits = []
+            unchanged_habits = []
+            for habit in to_habit_list.habits:
+                if habit['id'] not in [h['id'] for h in existing_habit_list.habits]:
+                    added_habits.append(habit)
+                else:
+                    merged_habits.append(habit)
+                    unchanged_habits.append(habit)
+
+            # Log the results
+            logging.info(f"Added {len(added_habits)} habits")
+            logging.info(f"Merged {len(merged_habits)} habits")
+            logging.info(f"Unchanged {len(unchanged_habits)} habits")
+
+            # Save the new habit list
             await user_storage.save_user_habit_list(user, to_habit_list)
             ui.notify(
                 f"Imported {len(to_habit_list.habits)} habits",
@@ -42,6 +62,7 @@ def import_ui_page(user: User):
         except json.JSONDecodeError:
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
         except Exception as error:
+            logging.exception(error)
             ui.notify(str(error), color="negative", position="top")
 
     menu_header("Import", target=get_root_path())
