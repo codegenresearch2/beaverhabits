@@ -9,7 +9,8 @@ DAY_MASK = "%Y-%m-%d"
 MONTH_MASK = "%Y/%m"
 
 @dataclass(init=False)
-default_factory=dict, metadata={"exclude": True})))
+default_factory=dict)
+default_factory=dict, metadata={"exclude": True}))
 class DictStorage:
     data: dict = field(default_factory=dict, metadata={"exclude": True})
 
@@ -19,16 +20,16 @@ class DictRecord(CheckedRecord, DictStorage):
     done: bool
 
     @property
-def day(self) -> datetime.date:
+    def day(self) -> datetime.date:
         date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
         return date.date()
 
     @property
-def done(self) -> bool:
+    def done(self) -> bool:
         return self.data["done"]
 
     @done.setter
-def done(self, value: bool) -> None:
+    def done(self, value: bool) -> None:
         self.data["done"] = value
 
 @dataclass
@@ -39,29 +40,29 @@ class DictHabit(Habit[DictRecord], DictStorage):
     records: list[DictRecord]
 
     @property
-def id(self) -> str:
+    def id(self) -> str:
         if "id" not in self.data:
             self.data["id"] = generate_short_hash(self.name)
         return self.data["id"]
 
     @property
-def name(self) -> str:
+    def name(self) -> str:
         return self.data["name"]
 
     @name.setter
-def name(self, value: str) -> None:
+    def name(self, value: str) -> None:
         self.data["name"] = value
 
     @property
-def star(self) -> bool:
+    def star(self) -> bool:
         return self.data.get("star", False)
 
     @star.setter
-def star(self, value: int) -> None:
+    def star(self, value: int) -> None:
         self.data["star"] = value
 
     @property
-def records(self) -> list[DictRecord]:
+    def records(self) -> list[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
@@ -74,7 +75,7 @@ def records(self) -> list[DictRecord]:
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
-def habits(self) -> list[DictHabit]:
+    def habits(self) -> list[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
         habits.sort(key=lambda x: x.star, reverse=True)
         return habits
