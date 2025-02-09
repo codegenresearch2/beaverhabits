@@ -8,7 +8,7 @@ from beaverhabits.storage.meta import get_root_path
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
-def import_from_json(text: str) -> HabitList:
+async def import_from_json(text: str) -> HabitList:
     try:
         d = json.loads(text)
         habit_list = DictHabitList(d)
@@ -40,7 +40,7 @@ def import_ui_page(user: User):
                 return
 
             text = e.content.read().decode("utf-8")
-            to_habit_list = import_from_json(text)
+            to_habit_list = await import_from_json(text)
 
             # Determine what habits will be added, merged, or unchanged
             current_ids = {habit['id'] for habit in current_habit_list.habits}
