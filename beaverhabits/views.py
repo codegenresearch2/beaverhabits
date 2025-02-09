@@ -32,7 +32,7 @@ def dummy_habit_list(days: List[datetime.date]) -> DictHabitList:
     return DictHabitList({'habits': items})
 
 
-def get_session_habit_list() -> HabitList | None:
+sync def get_session_habit_list() -> HabitList | None:
     return session_storage.get_user_habit_list()
 
 
@@ -48,7 +48,7 @@ async def get_session_habit(habit_id: str) -> Habit:
     return habit
 
 
-async def get_or_create_session_habit_list(days: List[datetime.date]) -> HabitList:
+sync def get_or_create_session_habit_list(days: List[datetime.date]) -> HabitList:
     if (habit_list := get_session_habit_list()) is not None:
         return habit_list
 
