@@ -2,18 +2,13 @@ import datetime
 from typing import List, Optional, Protocol
 
 from beaverhabits.app.db import User
+from enum import Enum
 
 
-class HabitStatus:
-    ACTIVE = 'active'
-    ARCHIVED = 'archived'
-    SOFT_DELETED = 'soft_deleted'  # Corrected spelling as per Oracle Feedback
-
-
-class HabitStatusEnum(Enum):
-    ACTIVE = 'active'
-    ARCHIVED = 'archived'
-    SOFT_DELETED = 'soft_deleted'
+class HabitStatus(Enum):
+    NORMAL = 'normal'
+    ARCHIVE = 'archive'
+    SOFT_DELETE = 'soft_delete'
 
 
 class CheckedRecord(Protocol):
@@ -52,11 +47,11 @@ class Habit[R: CheckedRecord](Protocol):
     def records(self) -> List[R]: ...
 
     @property
-    def status(self) -> HabitStatusEnum:
-        return HabitStatusEnum(self._status)
+    def status(self) -> HabitStatus:
+        return HabitStatus(self._status)
 
     @status.setter
-    def status(self, value: HabitStatusEnum) -> None:
+    def status(self, value: HabitStatus) -> None:
         self._status = value.value
 
     @property
