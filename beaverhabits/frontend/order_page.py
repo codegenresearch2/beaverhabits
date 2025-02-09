@@ -49,7 +49,7 @@ async def item_drop(e, habit_list: HabitList):
     for idx, habit_id in enumerate(habit_list.order):
         habit = habit_list.habits.get(habit_id)
         if habit:
-            habit.status = 'active' if idx < len(habit_list.order) / 2 else 'archived'
+            habit.status = HabitStatus.ARCHIVED if idx >= len(habit_list.order) / 2 else HabitStatus.ACTIVE
 
 
 @ui.refreshable
@@ -87,4 +87,15 @@ def order_page_ui(habit_list: HabitList):
                     add.classes('col-span-12').props('borderless')
 
     ui.add_body_html(
-        r'''<script type=
+        r'''<script type="module">
+        import '/statics/libs/sortable.min.js';
+        document.addEventListener('DOMContentLoaded', () => {
+            Sortable.create(document.querySelector('.sortable'), {
+                animation: 150,
+                ghostClass: 'opacity-50',
+                onEnd: (evt) => emitEvent("item_drop", {id: evt.item.id, new_index: evt.newIndex }),
+            });
+        });
+        </script>'''
+    )
+    ui.on('item_drop', lambda e: item_drop(e, habit_list))
