@@ -7,7 +7,13 @@ from beaverhabits.app.db import User
 class HabitStatus:
     ACTIVE = 'active'
     ARCHIVED = 'archived'
-    SOLD_DELETED = 'sold_deleted'  # Added as per Oracle Feedback
+    SOFT_DELETED = 'soft_deleted'  # Corrected spelling as per Oracle Feedback
+
+
+class HabitStatusEnum(Enum):
+    ACTIVE = 'active'
+    ARCHIVED = 'archived'
+    SOFT_DELETED = 'soft_deleted'
 
 
 class CheckedRecord(Protocol):
@@ -46,12 +52,12 @@ class Habit[R: CheckedRecord](Protocol):
     def records(self) -> List[R]: ...
 
     @property
-    def status(self) -> str:  # Changed to return string
-        return self._status
+    def status(self) -> HabitStatusEnum:
+        return HabitStatusEnum(self._status)
 
     @status.setter
-    def status(self, value: str) -> None:  # Changed to accept string
-        self._status = value
+    def status(self, value: HabitStatusEnum) -> None:
+        self._status = value.value
 
     @property
     def ticked_days(self) -> list[datetime.date]:
