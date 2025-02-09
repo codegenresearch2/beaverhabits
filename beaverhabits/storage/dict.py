@@ -57,10 +57,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
 
     async def merge(self, other: "DictHabit") -> "DictHabit":
-        merged_records = set(self.records).symmetric_difference(other.records)
+        merged_records = {r.day: r for r in self.records} | {r.day: r for r in other.records}
         new_habit = DictHabit({
             "name": self.name,
-            "records": [r.data for r in merged_records],
+            "records": list(merged_records.values()),
             "id": self.id
         })
         return new_habit
@@ -72,7 +72,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return hash(self.id)
 
     def __str__(self) -> str:
-        return self.id
+        return f"{self.name} (ID: {self.id})"
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
