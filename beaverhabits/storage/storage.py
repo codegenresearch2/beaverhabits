@@ -4,6 +4,11 @@ from typing import List, Optional, Protocol
 from beaverhabits.app.db import User
 
 
+class HabitStatus:
+    ACTIVE = 'active'
+    ARCHIVED = 'archived'
+
+
 class CheckedRecord(Protocol):
     @property
     def day(self) -> datetime.date: ...
@@ -50,9 +55,16 @@ class Habit[R: CheckedRecord](Protocol):
 
     __repr__ = __str__
 
+    @property
+    def status(self) -> HabitStatus:
+        raise NotImplementedError
+
+    @status.setter
+    def status(self, value: HabitStatus) -> None:
+        raise NotImplementedError
+
 
 class HabitList[H: Habit](Protocol):
-
     @property
     def habits(self) -> List[H]: ...
 
