@@ -45,7 +45,9 @@ class UserDatabaseStorage(UserStorage[DictHabitList]):
         return await current.merge(other)
 
 
-# Docstrings added for clarity and consistency
+# Removed the invalid line "Feedback addressed:"
+
+# Added docstrings for better documentation
 
 def __init__(self, user: User, data: dict) -> None:
     """
