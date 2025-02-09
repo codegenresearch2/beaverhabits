@@ -88,9 +88,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, DictHabit):
-            return False
-        return self.id == other.id and self.name == other.name
+        return isinstance(other, DictHabit) and self.id == other.id and self.name == other.name
 
     def __hash__(self) -> int:
         return hash((self.id, self.name))
