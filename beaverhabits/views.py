@@ -19,7 +19,7 @@ user_storage = get_user_dict_storage()
 def dummy_habit_list(days: List[datetime.date]) -> DictHabitList:
     # Generate a random habit list
     pick = lambda: random.randint(0, 3) == 0
-    habits = [
+    items = [
         {
             'id': generate_short_hash(name),
             'name': name,
@@ -30,7 +30,7 @@ def dummy_habit_list(days: List[datetime.date]) -> DictHabitList:
         }
         for name in ('Order pizz', 'Running', 'Table Tennis', 'Clean', 'Call mom')
     ]
-    return DictHabitList({'habits': habits})
+    return DictHabitList({'items': items})
 
 
 # Get the session habit list
