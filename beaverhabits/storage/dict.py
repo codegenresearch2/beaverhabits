@@ -81,8 +81,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         :param day: The date to tick.
         :param done: True if the habit was completed, False otherwise.
         """
-        record = next((r for r in self.records if r.day == day), None)
-        if record:
+        if record := next((r for r in self.records if r.day == day), None):
             record.done = done
         else:
             self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
