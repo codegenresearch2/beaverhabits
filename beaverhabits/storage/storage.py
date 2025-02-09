@@ -1,8 +1,10 @@
 import datetime
 from typing import List, Optional, Protocol
+import logging
 
 from beaverhabits.app.db import User
 
+logger = logging.getLogger(__name__)
 
 class CheckedRecord(Protocol):
     @property
@@ -18,7 +20,6 @@ class CheckedRecord(Protocol):
         return f"{self.day} {'[x]' if self.done else '[ ]'}"
 
     __repr__ = __str__
-
 
 class Habit[R: CheckedRecord](Protocol):
     @property
@@ -43,35 +44,37 @@ class Habit[R: CheckedRecord](Protocol):
     def ticked_days(self) -> list[datetime.date]:
         return [r.day for r in self.records if r.done]
 
-    async def tick(self, day: datetime.date, done: bool) -> None: ...
+    async def tick(self, day: datetime.date, done: bool) -> None:
+        logger.info(f"Ticking habit on {day} as done: {done}")
+        # Implementation omitted for brevity
 
     def __str__(self):
         return self.name
 
     __repr__ = __str__
 
-
 class HabitList[H: Habit](Protocol):
-
     @property
     def habits(self) -> List[H]: ...
 
-    async def add(self, name: str) -> None: ...
+    async def add(self, name: str) -> None:
+        logger.info(f"Adding habit: {name}")
+        # Implementation omitted for brevity
 
-    async def remove(self, item: H) -> None: ...
+    async def remove(self, item: H) -> None:
+        logger.info(f"Removing habit: {item.name}")
+        # Implementation omitted for brevity
 
-    async def get_habit_by(self, habit_id: str) -> Optional[H]: ...
-
+    async def get_habit_by(self, habit_id: str) -> Optional[H]:
+        logger.info(f"Getting habit by ID: {habit_id}")
+        # Implementation omitted for brevity
 
 class SessionStorage[L: HabitList](Protocol):
     def get_user_habit_list(self) -> Optional[L]: ...
 
     def save_user_habit_list(self, habit_list: L) -> None: ...
 
-
 class UserStorage[L: HabitList](Protocol):
     async def get_user_habit_list(self, user: User) -> Optional[L]: ...
 
     async def save_user_habit_list(self, user: User, habit_list: L) -> None: ...
-
-    async def merge_user_habit_list(self, user: User, other: L) -> L: ...
