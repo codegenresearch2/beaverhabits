@@ -23,7 +23,7 @@ def import_ui_page(user: User):
     async def handle_upload(e: events.UploadEventArguments):
         try:
             text = e.content.read().decode("utf-8")
-            to_habit_list = await import_from_json(text)
+            imported_habits = await import_from_json(text)
             existing_habit_list = await user_storage.get_user_habit_list(user)
 
             if existing_habit_list is None:
@@ -31,22 +31,22 @@ def import_ui_page(user: User):
 
             # Use sets for added and merged habits to simplify logic
             existing_ids = {habit['id'] for habit in existing_habit_list.habits}
-            new_ids = {habit['id'] for habit in to_habit_list.habits}
+            new_ids = {habit['id'] for habit in imported_habits.habits}
             added_ids = new_ids - existing_ids
             merged_ids = existing_ids & new_ids
             unchanged_ids = new_ids - added_ids - merged_ids
 
-            added_habits = [habit for habit in to_habit_list.habits if habit['id'] in added_ids]
-            merged_habits = [habit for habit in to_habit_list.habits if habit['id'] in merged_ids]
-            unchanged_habits = [habit for habit in to_habit_list.habits if habit['id'] in unchanged_ids]
+            added_habits = [habit for habit in imported_habits.habits if habit['id'] in added_ids]
+            merged_habits = [habit for habit in imported_habits.habits if habit['id'] in merged_ids]
+            unchanged_habits = [habit for habit in imported_habits.habits if habit['id'] in unchanged_ids]
 
             # Log the results
             logging.info(f"Added {len(added_habits)} habits, Merged {len(merged_habits)} habits, Unchanged {len(unchanged_habits)} habits")
 
             # Save the new habit list
-            await user_storage.save_user_habit_list(user, to_habit_list)
+            await user_storage.save_user_habit_list(user, imported_habits)
             ui.notify(
-                f"Imported {len(to_habit_list.habits)} habits",
+                f"Imported {len(imported_habits.habits)} habits",
                 position="top",
                 color="positive",
             )
