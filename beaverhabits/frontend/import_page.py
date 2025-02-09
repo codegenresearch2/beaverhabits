@@ -24,7 +24,7 @@ def import_ui_page(user: User):
             if current_habit_list is None:
                 current_habit_list = DictHabitList({"habits": []})
 
-            # Determine what habits will be added, merged, or unchanged
+            # Convert habit lists to sets of habit IDs for efficient comparison
             current_ids = {habit['id'] for habit in current_habit_list.habits}
             to_ids = {habit['id'] for habit in to_habit_list.habits}
 
