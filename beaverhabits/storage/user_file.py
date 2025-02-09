@@ -31,5 +31,4 @@ class UserDiskStorage(UserStorage[DictHabitList]):
             return other
 
         merged = await current.merge(other)
-        await self.save_user_habit_list(user, merged)
         return merged
