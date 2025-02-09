@@ -53,6 +53,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["id"] = generate_short_hash(self.name)
         return self.data["id"]
 
+    @id.setter
+    def id(self, value: str) -> None:
+        self.data["id"] = value
+
     @property
     def name(self) -> str:
         return self.data["name"]
@@ -81,6 +85,14 @@ class DictHabit(Habit[DictRecord], DictStorage):
             data = {"day": day.strftime(DAY_MASK), "done": done}
             self.data["records"].append(data)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DictHabit):
+            return False
+        return self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
+
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
@@ -101,3 +113,8 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
+
+    async def merge(self, other: 'DictHabitList') -> None:
+        for habit in other.habits:
+            if habit not in self.habits:
+                self.data["habits"].append(habit.data)
