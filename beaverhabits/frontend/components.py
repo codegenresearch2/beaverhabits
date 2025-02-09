@@ -1,1 +1,1 @@
-def short_function():\"""Return a short string."""\"
+def short_function():"""Return a short string.""""}
