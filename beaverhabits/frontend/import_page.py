@@ -8,7 +8,7 @@ from beaverhabits.storage.meta import get_root_path
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
-def import_from_json(text: str) -> HabitList:
+async def import_from_json(text: str) -> HabitList:
     try:
         d = json.loads(text)
         habit_list = DictHabitList(d)
@@ -17,7 +17,7 @@ def import_from_json(text: str) -> HabitList:
         return habit_list
     except json.JSONDecodeError:
         logging.exception("Invalid JSON during import")
-        raise
+        raise ValueError("Invalid JSON")
     except Exception as e:
         logging.exception("Error during import")
         raise ValueError(f"Error during import: {str(e)}")
@@ -39,19 +39,11 @@ async def import_ui_page(user: User):
                 return
 
             text = e.content.read().decode("utf-8")
-            to_habit_list = import_from_json(text)
+            to_habit_list = await import_from_json(text)
 
-            added_habits = []
-            merged_habits = []
-            unchanged_habits = []
-
-            for habit in to_habit_list.habits:
-                if habit.name not in existing_habit_names:
-                    added_habits.append(habit)
-                else:
-                    merged_habits.append(habit)
-                    existing_habit_names.remove(habit.name)
-                unchanged_habits.append(habit)
+            added_habits = [habit for habit in to_habit_list.habits if habit.name not in existing_habit_names]
+            merged_habits = [habit for habit in to_habit_list.habits if habit.name in existing_habit_names]
+            unchanged_habits = [habit for habit in to_habit_list.habits if habit in (added_habits + merged_habits)]
 
             if added_habits or merged_habits:
                 ui.notify(
@@ -61,6 +53,10 @@ async def import_ui_page(user: User):
                 )
             else:
                 ui.notify("No new habits to add or merge.", position="top", color="neutral")
+
+            # Save the merged and added habits
+            if added_habits or merged_habits:
+                await user_storage.save_user_habit_list(user, to_habit_list)
 
         except json.JSONDecodeError:
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
