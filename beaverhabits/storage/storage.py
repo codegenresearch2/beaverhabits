@@ -1,8 +1,6 @@
-import datetime
-from typing import List, Optional, Protocol, TypeVar, Generic
+from typing import Generic, List, Optional, TypeVar, Protocol
 from uuid import UUID
-
-from beaverhabits.app.db import User
+import datetime
 
 # Type variables for generics
 R = TypeVar('R', bound='CheckedRecord')
@@ -36,10 +34,10 @@ class Habit(Generic[R], Protocol):
     def name(self, value: str) -> None: ...
 
     @property
-    def star(self) -> bool: ...
+    def star(self) -> int: ...
 
     @star.setter
-    def star(self, value: bool) -> None: ...
+    def star(self, value: int) -> None: ...
 
     @property
     def records(self) -> List[R]: ...
@@ -69,10 +67,10 @@ class HabitList(Generic[H], Protocol):
     async def merge(self, other: "HabitList") -> "HabitList": ...
 
 
-class SessionStorage(Protocol):
-    def get_user_habit_list(self) -> Optional[HabitList]: ...
+class SessionStorage(Generic[H], Protocol):
+    def get_user_habit_list(self) -> Optional[HabitList[H]]: ...
 
-    def save_user_habit_list(self, habit_list: HabitList) -> None: ...
+    def save_user_habit_list(self, habit_list: HabitList[H]) -> None: ...
 
 
 class UserStorage(Protocol):
