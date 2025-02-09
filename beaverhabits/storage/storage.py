@@ -1,5 +1,6 @@
 import datetime
-from typing import List, Optional, Protocol, TypeVar
+from typing import List, Optional, Protocol, TypeVar, Generic
+from uuid import UUID
 
 from beaverhabits.app.db import User
 
@@ -24,7 +25,7 @@ class CheckedRecord(Protocol):
     __repr__ = __str__
 
 
-class Habit(Protocol):
+class Habit(Generic[R], Protocol):
     @property
     def id(self) -> str: ...
 
@@ -55,7 +56,7 @@ class Habit(Protocol):
     __repr__ = __str__
 
 
-class HabitList(Protocol):
+class HabitList(Generic[H], Protocol):
     @property
     def habits(self) -> List[H]: ...
 
@@ -78,6 +79,8 @@ class UserStorage(Protocol):
     async def get_user_habit_list(self, user: User) -> Optional[HabitList]: ...
 
     async def save_user_habit_list(self, user: User, habit_list: HabitList) -> None: ...
+
+    async def merge_user_habit_list(self, user: User, habit_list: HabitList) -> None: ...
 
 
 class HabitManager:
