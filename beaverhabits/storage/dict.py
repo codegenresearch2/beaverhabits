@@ -9,11 +9,15 @@ DAY_MASK = "%Y-%m-%d"
 MONTH_MASK = "%Y/%m"
 
 @dataclass(init=False)
-default_factory=dict)
 default_factory=dict, metadata={"exclude": True})))
+class DictStorage:
+    data: dict = field(default_factory=dict, metadata={"exclude": True})
 
 @dataclass
 class DictRecord(CheckedRecord, DictStorage):
+    day: datetime.date
+    done: bool
+
     @property
 def day(self) -> datetime.date:
         date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
@@ -29,6 +33,11 @@ def done(self, value: bool) -> None:
 
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
+    id: str
+    name: str
+    star: bool
+    records: list[DictRecord]
+
     @property
 def id(self) -> str:
         if "id" not in self.data:
