@@ -71,18 +71,18 @@ class SessionStorage(Generic[H], Protocol):
     def save_user_habit_list(self, habit_list: HabitList[H]) -> None: ...
 
 
+class User:
+    def __init__(self, id: int, name: str):
+        self.id = id
+        self.name = name
+
+
 class UserStorage(Protocol):
     async def get_user_habit_list(self, user: User) -> Optional[HabitList]: ...
 
     async def save_user_habit_list(self, user: User, habit_list: HabitList) -> None: ...
 
-    async def merge_user_habit_list(self, user: User, habit_list: HabitList) -> None: ...
-
-
-class User:
-    def __init__(self, id: int, name: str):
-        self.id = id
-        self.name = name
+    async def merge_user_habit_list(self, user: User, habit_list: HabitList) -> Optional[HabitList]: ...
 
 
 class HabitManager:
