@@ -102,7 +102,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["records"].append(DictRecord(day=day.strftime(DAY_MASK), done=done))
 
     async def merge(self, other: "DictHabit") -> "DictHabit":
-        result_records = set(self.records).union(set(other.records))
+        result_records = sorted(
+            list(set(self.records).union(set(other.records))),
+            key=lambda r: r.day
+        )
         new_habit_data = {
             "name": self.name,
             "records": [record.__dict__ for record in result_records],
@@ -129,6 +132,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
     def habits(self) -> List[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
         if "order" in self.data:
+            habits = [habit for habit in habits if habit.status != HabitStatus.SOLF_DELETED]
             habits.sort(key=lambda x: self.order.index(str(x.id)) if str(x.id) in self.order else float("inf"))
         return habits
 
@@ -147,7 +151,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
         return None
 
     async def add(self, name: str) -> None:
-        habit = DictHabit(name=name, records=[], id=generate_short_hash(name))
+        habit = DictHabit(name=name, records=[], id=generate_short_hash(name), status=HabitStatus.ACTIVE)
         self.data["habits"].append(habit.data)
 
     async def remove(self, item: DictHabit) -> None:
