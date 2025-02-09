@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Optional, Set
+from typing import Optional
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
@@ -33,7 +33,9 @@ class DictRecord(CheckedRecord, DictStorage):
 
     @property
     def day(self) -> datetime.date:
-        return datetime.datetime.strptime(self.data["day"], DAY_MASK).date()
+        date_str = self.data["day"]
+        date = datetime.datetime.strptime(date_str, DAY_MASK)
+        return date.date()
 
     @property
     def done(self) -> bool:
@@ -51,6 +53,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
         if "id" not in self.data:
             self.data["id"] = generate_short_hash(self.data["name"])
         return self.data["id"]
+
+    @id.setter
+    def id(self, value: str) -> None:
+        self.data["id"] = value
 
     @property
     def name(self) -> str:
@@ -71,10 +77,6 @@ class DictHabit(Habit[DictRecord], DictStorage):
     @property
     def records(self) -> list[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
-
-    @property
-    def ticked_days(self) -> list[datetime.date]:
-        return [r.day for r in self.records if r.done]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
         record = next((r for r in self.records if r.day == day), None)
