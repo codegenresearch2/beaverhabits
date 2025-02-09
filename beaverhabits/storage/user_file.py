@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from pathlib import Path
 from typing import Optional
 
@@ -14,22 +13,21 @@ KEY_NAME = "data"
 
 class UserDiskStorage(UserStorage[DictHabitList]):
     async def get_user_habit_list(self, user: User) -> Optional[DictHabitList]:
-        try:
-            d = await asyncio.to_thread(self._get_persistent_dict(user).get, KEY_NAME)
-            if not d:
-                return None
-            return DictHabitList(d)
-        except Exception as e:
-            logging.error(f"Failed to get user habit list for user {user.email}: {e}")
+        path = Path(f"{USER_DATA_FOLDER}/{str(user.email)}.json")
+        persistent_dict = PersistentDict(path, encoding="utf-8")
+        data = persistent_dict.get(KEY_NAME)
+        if data is None:
             return None
+        return DictHabitList(data)
 
     async def save_user_habit_list(self, user: User, habit_list: DictHabitList) -> None:
-        try:
-            d = self._get_persistent_dict(user)
-            d[KEY_NAME] = habit_list.data
-        except Exception as e:
-            logging.error(f"Failed to save user habit list for user {user.email}: {e}")
-
-    def _get_persistent_dict(self, user: User) -> PersistentDict:
         path = Path(f"{USER_DATA_FOLDER}/{str(user.email)}.json")
-        return PersistentDict(path, encoding="utf-8")
+        persistent_dict = PersistentDict(path, encoding="utf-8")
+        persistent_dict[KEY_NAME] = habit_list.data
+
+    async def merge_user_habit_list(self, user: User, other: DictHabitList) -> DictHabitList:
+        current = await self.get_user_habit_list(user)
+        if current is None:
+            return other
+        merged_data = {**current.data, **other.data}
+        return DictHabitList(merged_data)
