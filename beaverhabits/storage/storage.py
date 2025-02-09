@@ -7,6 +7,7 @@ from beaverhabits.app.db import User
 class HabitStatus:
     ACTIVE = 'active'
     ARCHIVED = 'archived'
+    SOLD_DELETED = 'sold_deleted'  # Added as per Oracle Feedback
 
 
 class CheckedRecord(Protocol):
@@ -45,6 +46,14 @@ class Habit[R: CheckedRecord](Protocol):
     def records(self) -> List[R]: ...
 
     @property
+    def status(self) -> str:  # Changed to return string
+        return self._status
+
+    @status.setter
+    def status(self, value: str) -> None:  # Changed to accept string
+        self._status = value
+
+    @property
     def ticked_days(self) -> list[datetime.date]:
         return [r.day for r in self.records if r.done]
 
@@ -54,14 +63,6 @@ class Habit[R: CheckedRecord](Protocol):
         return self.name
 
     __repr__ = __str__
-
-    @property
-    def status(self) -> HabitStatus:
-        raise NotImplementedError
-
-    @status.setter
-    def status(self, value: HabitStatus) -> None:
-        raise NotImplementedError
 
 
 class HabitList[H: Habit](Protocol):
