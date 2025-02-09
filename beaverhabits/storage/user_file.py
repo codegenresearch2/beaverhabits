@@ -17,16 +17,15 @@ class UserDiskStorage(UserStorage[DictHabitList]):
         return PersistentDict(path, encoding="utf-8")
 
     async def get_user_habit_list(self, user: User) -> Optional[DictHabitList]:
-        persistent_dict = self._get_persistent_dict(user)
-        data = persistent_dict.get(KEY_NAME)
-        if not data:
+        d = self._get_persistent_dict(user).get(KEY_NAME)
+        if not d:
             return None
-        return DictHabitList(data)
+        return DictHabitList(d)
 
     async def save_user_habit_list(self, user: User, habit_list: DictHabitList) -> None:
-        persistent_dict = self._get_persistent_dict(user)
-        persistent_dict[KEY_NAME] = habit_list.data
-        await asyncio.to_thread(persistent_dict.save)
+        d = self._get_persistent_dict(user)
+        d[KEY_NAME] = habit_list.data
+        await asyncio.to_thread(d.save)
 
     async def merge_user_habit_list(self, user: User, other: DictHabitList) -> DictHabitList:
         current = await self.get_user_habit_list(user)
