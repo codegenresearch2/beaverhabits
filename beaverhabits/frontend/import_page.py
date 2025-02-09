@@ -36,9 +36,7 @@ def import_ui_page(user: User):
             unchanged_habits = [habit for habit in to_habit_list.habits if habit['id'] in unchanged_habits_set]
 
             # Log the results
-            logging.info(f"Added {len(added_habits)} habits")
-            logging.info(f"Merged {len(merged_habits)} habits")
-            logging.info(f"Unchanged {len(unchanged_habits)} habits")
+            logging.info(f"Added {len(added_habits)} habits, Merged {len(merged_habits)} habits, Unchanged {len(unchanged_habits)} habits")
 
             # Save the new habit list
             await user_storage.save_user_habit_list(user, to_habit_list)
