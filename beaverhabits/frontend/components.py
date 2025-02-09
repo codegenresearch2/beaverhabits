@@ -1,0 +1,1 @@
+import os\\nimport sys\\n\\n# Add the parent directory to the Python path\\ncurrent_dir = os.path.dirname(os.path.abspath(__file__))\\nparent_dir = os.path.dirname(current_dir)\\nsys.path.insert(0, parent_dir) \\n\\n# Now you can import your modules\\nfrom beaverhabits.frontend.components import YourComponentModule
