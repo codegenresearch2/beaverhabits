@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Set
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
@@ -52,6 +52,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["id"] = generate_short_hash(self.data["name"])
         return self.data["id"]
 
+    @id.setter
+    def id(self, value: str) -> None:
+        self.data["id"] = value
+
     @property
     def name(self) -> str:
         return self.data["name"]
@@ -83,6 +87,14 @@ class DictHabit(Habit[DictRecord], DictStorage):
         else:
             self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DictHabit):
+            return False
+        return self.id == other.id and self.name == other.name
+
+    def __hash__(self) -> int:
+        return hash((self.id, self.name))
+
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
@@ -110,5 +122,6 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     async def merge(self, other: 'DictHabitList') -> 'DictHabitList':
         merged_list = DictHabitList()
-        merged_list.data["habits"] = self.data["habits"] + other.data["habits"]
+        unique_habits = set(self.habits) | set(other.habits)
+        merged_list.data["habits"] = [habit.data for habit in unique_habits]
         return merged_list
