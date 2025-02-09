@@ -8,7 +8,7 @@ from beaverhabits.storage.meta import get_root_path
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
-def import_from_json(text: str) -> HabitList:
+async def import_from_json(text: str) -> HabitList:
     habit_list = DictHabitList(json.loads(text))
     if not habit_list.habits:
         raise ValueError("No habits found")
@@ -18,9 +18,9 @@ def import_ui_page(user: User):
     async def handle_upload(e: events.UploadEventArguments):
         text = e.content.read().decode("utf-8")
         try:
-            to_habit_list = import_from_json(text)
+            to_habit_list = await import_from_json(text)
 
-            current_habit_list = user_storage.get_user_habit_list(user)
+            current_habit_list = await user_storage.get_user_habit_list(user)
             if current_habit_list is None:
                 current_habit_list = DictHabitList({"habits": []})
 
