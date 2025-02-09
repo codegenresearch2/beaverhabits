@@ -17,13 +17,14 @@ async def item_drop(e, habit_list: HabitList):
     dragged = elements[int(e.args["id"][1:])]
     dragged.move(target_index=e.args["new_index"])
 
+    assert dragged.parent_slot is not None, "Dragged element's parent slot is None"
     habits = [
         x.habit
         for x in dragged.parent_slot.children
         if isinstance(x, components.HabitOrderCard) and x.habit
     ]
     habit_list.order = [str(x.id) for x in habits]
-    logger.info(f"Item {dragged.id} dropped to index {e.args['new_index']}")
+    logger.info(f"Item {dragged.id} moved to index {e.args['new_index']}")
 
     # Refresh UI
     add_ui.refresh()
