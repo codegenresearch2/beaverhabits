@@ -22,8 +22,8 @@ async def item_drop(e, habit_list: HabitList):
         if isinstance(x, components.HabitOrderCard) and x.habit
     ]
     habit_list.order = [str(x.id) for x in habits]
-    habit_list.update_habit_status(habits)
-    logger.info(f"Item dropped: {dragged.habit.name}, New index: {e.args['new_index']}")
+    habit_list.update_habit_status(habits, e.args["new_index"])
+    logger.info(f"Item dropped: {dragged.habit.name}, New index: {e.args['new_index']}, New status: {dragged.habit.status}")
     add_ui.refresh()
 
 @ui.refreshable
@@ -37,7 +37,7 @@ def add_ui(habit_list: HabitList):
                         name.classes("col-span-10 col-10")
                     else:
                         name = HabitNameInput(item)
-                        name.classes("col-span-3 col-3")
+                        name.classes("col-span-8 col-8")
                     name.props("borderless")
 
                     delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
