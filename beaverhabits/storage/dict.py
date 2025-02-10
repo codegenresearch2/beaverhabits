@@ -15,6 +15,9 @@ class DictStorage:
 
 @dataclass
 class DictRecord(CheckedRecord, DictStorage):
+    """
+    Represents a checked record with a day and done status.
+    """
     @property
     def day(self) -> datetime.date:
         date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
@@ -31,11 +34,18 @@ class DictRecord(CheckedRecord, DictStorage):
 
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
+    """
+    Represents a habit with a name, star status, and associated records.
+    """
     @property
     def id(self) -> str:
         if "id" not in self.data:
             self.data["id"] = generate_short_hash(self.name)
         return self.data["id"]
+
+    @id.setter
+    def id(self, value: str) -> None:
+        self.data["id"] = value
 
     @property
     def name(self) -> str:
@@ -67,8 +77,23 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["records"].append(data)
             logging.info(f"Added new record for {day} with status {done}")
 
+    def __eq__(self, other):
+        if isinstance(other, DictHabit):
+            return self.id == other.id
+        return False
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def merge(self, other: 'DictHabit') -> 'DictHabit':
+        # Implement merge functionality here
+        pass
+
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
+    """
+    Represents a list of habits.
+    """
     @property
     def habits(self) -> list[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
@@ -79,7 +104,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
         for habit in self.habits:
             if habit.id == habit_id:
                 return habit
-        logging.info(f"No habit found with id {habit_id}")
+        logging.warning(f"No habit found with id {habit_id}")
         return None
 
     async def add(self, name: str) -> None:
@@ -90,3 +115,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
         logging.info(f"Removed habit: {item.name}")
+
+    def merge(self, other: 'DictHabitList') -> 'DictHabitList':
+        # Implement merge functionality here
+        pass
