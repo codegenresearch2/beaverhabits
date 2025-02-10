@@ -36,7 +36,11 @@ class HabitAddCard(ui.card):
             add = HabitAddButton(self.habit_list, self.refresh_func)
             add.classes("col-span-7")
 
+    def refresh(self):
+        # Implement the refresh functionality here
+        pass
+
 def add_page_ui(habit_list: HabitList):
     with layout():
         with ui.column().classes("w-full pl-1 items-center"):
-            HabitAddCard(habit_list, HabitAddCard.refresh)
+            habit_add_card = HabitAddCard(habit_list, habit_add_card.refresh)
