@@ -1,5 +1,6 @@
 import datetime
 import json
+import random
 import time
 from typing import List, Optional
 
@@ -11,6 +12,9 @@ from beaverhabits.storage import get_user_storage, session_storage
 from beaverhabits.storage.dict import DAY_MASK, DictHabitList
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.utils import generate_short_hash
+
+# Import the necessary module
+import random
 
 user_storage = get_user_storage()
 
