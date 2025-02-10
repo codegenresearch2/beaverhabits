@@ -67,7 +67,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return self.data.get("star", False)
 
     @star.setter
-    def star(self, value: int) -> None:
+    def star(self, value: bool) -> None:
         self.data["star"] = value
 
     @property
@@ -90,10 +90,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, DictHabit):
             return False
-        return self.id == other.id and self.name == other.name and self.star == other.star and self.records == other.records
+        return self.id == other.id
 
     def __hash__(self) -> int:
-        return hash((self.id, self.name, self.star, tuple(self.records)))
+        return hash(self.id)
 
     def merge(self, other: 'DictHabit') -> 'DictHabit':
         merged_habit = DictHabit()
@@ -126,7 +126,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     def merge(self, other: 'DictHabitList') -> 'DictHabitList':
         merged_list = DictHabitList()
-        merged_list.data["habits"] = self.data["habits"] + other.data["habits"]
+        merged_list.data["habits"] = list(set(self.data["habits"] + other.data["habits"]))
         return merged_list
 
 
@@ -142,5 +142,5 @@ class UserStorageImpl(UserStorage[DictHabitList]):
     async def merge_user_habit_list(self, user: User, other: DictHabitList) -> DictHabitList:
         # Implementation to merge habit lists for a user
         merged_list = DictHabitList()
-        merged_list.data["habits"] = self.data["habits"] + other.data["habits"]
+        merged_list.data["habits"] = list(set(self.data["habits"] + other.data["habits"]))
         return merged_list
