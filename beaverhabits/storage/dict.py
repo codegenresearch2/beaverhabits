@@ -19,6 +19,14 @@ class DictStorage:
 
 @dataclass
 class DictRecord(CheckedRecord, DictStorage):
+    """
+    Represents a checked record with a day and done status.
+
+    Data flow:
+    - Persistent data -> Memory -> View
+    - Memory data -> Persistent data
+    """
+
     @property
     def day(self) -> datetime.date:
         date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
@@ -35,10 +43,12 @@ class DictRecord(CheckedRecord, DictStorage):
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
     def __init__(self, name: str, status: HabitStatus = HabitStatus.ACTIVE):
-        self.data = {"name": name, "records": [], "status": status.value, "id": generate_short_hash(name)}
+        self.data = {"name": name, "records": [], "status": status.value}
 
     @property
     def id(self) -> str:
+        if "id" not in self.data:
+            self.data["id"] = generate_short_hash(self.name)
         return self.data["id"]
 
     @property
@@ -63,7 +73,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
     @property
     def status(self) -> HabitStatus:
-        return HabitStatus(self.data.get("status", HabitStatus.ACTIVE.value))
+        return HabitStatus(self.data["status"])
 
     @status.setter
     def status(self, value: HabitStatus) -> None:
@@ -104,7 +114,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
     def habits(self) -> list[DictHabit]:
-        habits = [DictHabit(d["name"], HabitStatus(d.get("status", HabitStatus.ACTIVE.value))) for d in self.data["habits"] if d.get("status", HabitStatus.ACTIVE.value) != HabitStatus.INACTIVE.value]
+        habits = [DictHabit(d["name"], HabitStatus(d["status"])) for d in self.data["habits"] if d["status"] != HabitStatus.INACTIVE.value]
 
         if self.order:
             habits.sort(
