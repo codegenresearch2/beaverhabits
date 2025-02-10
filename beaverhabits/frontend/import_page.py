@@ -6,15 +6,24 @@ from beaverhabits.storage.dict import DictHabitList
 from beaverhabits.storage.meta import get_root_path
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.storage import user_storage as user_storage_module
+import logging
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 def import_from_json(text: str) -> HabitList:
-    d = json.loads(text)
-    habit_list = DictHabitList(d)
-    if not habit_list.habits:
-        raise ValueError("No habits found")
-    return habit_list
-
+    try:
+        d = json.loads(text)
+        habit_list = DictHabitList(d)
+        if not habit_list.habits:
+            raise ValueError("No habits found")
+        return habit_list
+    except json.JSONDecodeError:
+        logging.error("Import failed: Invalid JSON")
+        raise
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+        raise
 
 def import_ui_page(user: User):
     with ui.dialog() as dialog, ui.card().classes("w-64"):
@@ -31,7 +40,15 @@ def import_ui_page(user: User):
 
             text = e.content.read().decode("utf-8")
             to_habit_list = import_from_json(text)
-            await user_storage_module.save_user_habit_list(user, to_habit_list)
+            existing_habit_list = await user_storage_module.get_user_habit_list(user)
+
+            if existing_habit_list:
+                # Merge the new habits with the existing ones
+                merged_habit_list = existing_habit_list.merge(to_habit_list)
+                await user_storage_module.save_user_habit_list(user, merged_habit_list)
+            else:
+                await user_storage_module.save_user_habit_list(user, to_habit_list)
+
             ui.notify(
                 f"Imported {len(to_habit_list.habits)} habits",
                 position="top",
