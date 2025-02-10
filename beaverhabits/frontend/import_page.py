@@ -21,9 +21,21 @@ def import_ui_page(user: User):
             text = e.content.read().decode("utf-8")
             to_habit_list = await import_from_json(text)
             existing_habit_list = await user_storage.get_user_habit_list(user)
+            
             if existing_habit_list:
                 added, merged, unchanged = existing_habit_list.calculate_import_stats(to_habit_list)
                 logging.info(f"Added: {added}, Merged: {merged}, Unchanged: {unchanged}")
+                
+                with ui.dialog() as dialog, ui.card().classes("w-64"):
+                    ui.label(f"Are you sure? {added} habits will be added, {merged} will be merged, and {unchanged} will remain unchanged.")
+                    with ui.row():
+                        ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
+                        ui.button("No", on_click=lambda: dialog.submit("No"))
+                
+                result = await dialog
+                if result != "Yes":
+                    return
+                
                 await existing_habit_list.merge(to_habit_list)
             else:
                 await user_storage.save_user_habit_list(user, to_habit_list)
@@ -44,3 +56,4 @@ def import_ui_page(user: User):
 
     # Upload: https://nicegui.io/documentation/upload
     ui.upload(on_upload=handle_upload, max_files=1).props("accept=.json")
+    return
