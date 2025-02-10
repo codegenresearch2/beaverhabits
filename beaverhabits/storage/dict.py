@@ -101,16 +101,22 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["records"].append(DictRecord(day=day.strftime(DAY_MASK), done=done))
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name}<{self.id}>"
 
     __repr__ = __str__
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, DictHabit) and self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
 
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
     def habits(self) -> List[DictHabit]:
-        habits = [DictHabit(d) for d in self.data["habits"]]
+        habits = [DictHabit(d) for d in self.data["habits"] if d.get("status") != "soft_delete"]
 
         # Sort by order
         if self.order:
