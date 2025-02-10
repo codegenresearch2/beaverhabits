@@ -102,7 +102,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
     async def merge(self, other: "DictHabit") -> "DictHabit":
         result_records = self.records + other.records
-        return DictHabit({"name": self.name, "records": result_records, "id": self.id, "status": self.status.value})
+        return DictHabit({"name": self.name, "records": result_records, "id": self.id, "status": self.status})
 
     def __str__(self) -> str:
         return f"{self.name}<{self.id}>"
@@ -137,7 +137,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
         return None
 
     async def add(self, name: str) -> None:
-        habit = DictHabit({"name": name, "records": [], "id": generate_short_hash(name), "status": HabitStatus.ACTIVE.value})
+        habit = DictHabit({"name": name, "records": [], "id": generate_short_hash(name), "status": HabitStatus.ACTIVE})
         self.data["habits"].append(habit.data)
 
     async def remove(self, item: DictHabit) -> None:
