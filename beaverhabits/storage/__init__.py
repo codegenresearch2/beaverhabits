@@ -1,5 +1,3 @@
-import asyncio
-import logging
 from beaverhabits.configs import StorageType, settings
 from beaverhabits.storage.session_file import SessionDictStorage, SessionStorage
 from beaverhabits.storage.storage import UserStorage
@@ -12,6 +10,10 @@ user_database_storage = UserDatabaseStorage()
 sqlite_storage = None
 
 
+def get_sessions_storage() -> SessionStorage:
+    return session_storage
+
+
 def get_user_dict_storage() -> UserStorage:
     if settings.HABITS_STORAGE == StorageType.USER_DISK:
         return user_disk_storage
@@ -19,18 +21,3 @@ def get_user_dict_storage() -> UserStorage:
         return user_database_storage
     else:
         raise NotImplementedError("Storage type not implemented")
-
-
-async def import_habit_list(user, habit_list):
-    try:
-        logging.info("Starting habit list import for user: %s", user.email)
-        existing_list = await get_user_dict_storage().get_user_habit_list(user)
-        if existing_list:
-            merged_list = await existing_list.merge(habit_list)
-            await get_user_dict_storage().save_user_habit_list(user, merged_list)
-            logging.info("Habit list merged successfully for user: %s", user.email)
-        else:
-            await get_user_dict_storage().save_user_habit_list(user, habit_list)
-            logging.info("Habit list saved successfully for user: %s", user.email)
-    except Exception as e:
-        logging.error("Failed to import habit list for user: %s, error: %s", user.email, str(e))
