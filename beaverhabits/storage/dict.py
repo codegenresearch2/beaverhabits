@@ -51,7 +51,12 @@ class DictRecord(CheckedRecord, DictStorage):
 
 
 @dataclass
-class DictHabit(Habit[DictRecord], DictStorage):
+class DictHabit(Habit[DictRecord]):
+    data: dict
+
+    def __init__(self, data: dict):
+        self.data = data
+
     @property
     def id(self) -> str:
         if "id" not in self.data:
@@ -79,8 +84,8 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["star"] = value
 
     @property
-    def records(self) -> list[DictRecord]:
-        return [DictRecord(d) for d in self.data["records"]]
+    def records(self) -> List[DictRecord]:
+        return [DictRecord(d) for d in self.data.get("records", [])]
 
     @property
     def status(self) -> HabitStatus:
@@ -91,29 +96,26 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["status"] = value.value
 
     @property
-    def ticked_days(self) -> list[datetime.date]:
+    def ticked_days(self) -> List[datetime.date]:
         return [r.day for r in self.records if r.done]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
         if record := next((r for r in self.records if r.day == day), None):
             record.done = done
         else:
-            data = {"day": day.strftime(DAY_MASK), "done": done}
-            self.data["records"].append(data)
+            self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
 
     async def merge(self, other: "DictHabit") -> "DictHabit":
         self_ticks = {r.day for r in self.records if r.done}
         other_ticks = {r.day for r in other.records if r.done}
-        result = sorted(list(self_ticks | other_ticks))
+        result_days = sorted(list(self_ticks | other_ticks))
 
-        d = {
+        merged_data = {
             "name": self.name,
-            "records": [
-                {"day": day.strftime(DAY_MASK), "done": True} for day in result
-            ],
+            "records": [{"day": day.strftime(DAY_MASK), "done": True} for day in result_days],
             "status": self.status.value,
         }
-        return DictHabit(d)
+        return DictHabit(merged_data)
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, DictHabit) and self.id == other.id
@@ -128,23 +130,17 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
 
 @dataclass
-class DictHabitList(HabitList[DictHabit], DictStorage):
+class DictHabitList(HabitList[DictHabit]):
+    data: dict
+
+    def __init__(self, data: dict):
+        self.data = data
+
     @property
-    def habits(self) -> list[DictHabit]:
-        valid_habits = [habit for habit in self.data.get("habits", []) if habit.get("status") != "soft_delete"]
-        habits = [DictHabit(d) for d in valid_habits]
-
-        # Sort by order
-        if self.order:
-            habits.sort(
-                key=lambda x: (
-                    self.order.index(str(x.id))
-                    if str(x.id) in self.order
-                    else float("inf")
-                )
-            )
-
-        return habits
+    def habits(self) -> List[DictHabit]:
+        valid_habits = [habit for habit in self.data.get("habits", []) if habit["status"] != "soft_delete"]
+        valid_habits.sort(key=lambda x: self.order.index(str(x.id)) if str(x.id) in self.order else float("inf"))
+        return valid_habits
 
     @property
     def order(self) -> List[str]:
@@ -160,20 +156,18 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                 return habit
 
     async def add(self, name: str) -> None:
-        d = {"name": name, "records": [], "id": generate_short_hash(name), "status": "normal"}
-        self.data["habits"].append(d)
+        habit_data = {
+            "name": name,
+            "records": [],
+            "id": generate_short_hash(name),
+            "status": "normal",
+        }
+        self.data["habits"].append(habit_data)
 
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
 
     async def merge(self, other: "DictHabitList") -> "DictHabitList":
-        result = set(self.habits).symmetric_difference(set(other.habits))
-
-        # Merge the habit if it exists
-        for self_habit in self.habits:
-            for other_habit in other.habits:
-                if self_habit == other_habit:
-                    new_habit = await self_habit.merge(other_habit)
-                    result.add(new_habit)
-
-        return DictHabitList({"habits": [h.data for h in result]})
+        merged_habits = set(self.habits).symmetric_difference(set(other.habits))
+        merged_data = {"habits": [h.data for h in merged_habits], "order": self.order}
+        return DictHabitList(merged_data)
