@@ -72,8 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 """
 
 # Async function to handle the drop event
-async def item_drop(event):
-    new_order = event.detail.newOrder
+async def item_drop(new_order):
     # Update the order of habits in the habit_list
     habit_list.habits = [habit_list.habits[int(index)] for index in new_order]
     logger.info(f"Habits reordered: {new_order}")
