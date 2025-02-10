@@ -12,7 +12,7 @@ from beaverhabits.storage.storage import HabitList
 grid_classes = "w-full gap-0 items-center"
 
 class HabitAddCard(ui.card):
-    def __init__(self, habit_list: HabitList, refresh_func):
+    def __init__(self, habit_list: HabitList, refresh_func=None):
         super().__init__()
         self.habit_list = habit_list
         self.refresh_func = refresh_func
@@ -43,5 +43,5 @@ class HabitAddCard(ui.card):
 def add_page_ui(habit_list: HabitList):
     with layout():
         with ui.column().classes("w-full pl-1 items-center"):
-            habit_add_card = HabitAddCard(habit_list, habit_add_card.refresh)
+            habit_add_card = HabitAddCard(habit_list)
             habit_add_card.refresh_func = habit_add_card.refresh
