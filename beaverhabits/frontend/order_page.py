@@ -1,15 +1,15 @@
+from enum import Enum
 from nicegui import ui
 
 from beaverhabits.frontend import components
-from beaverhabits.frontend.components import (
-    HabitAddButton,
-    HabitDeleteButton,
-    HabitNameInput,
-    HabitStarCheckbox,
-)
+from beaverhabits.frontend.components import HabitAddButton, HabitDeleteButton, HabitNameInput
 from beaverhabits.frontend.layout import layout
 from beaverhabits.logging import logger
 from beaverhabits.storage.storage import HabitList
+
+class HabitStatus(Enum):
+    ACTIVE = 'active'
+    ARCHIVED = 'archived'
 
 async def item_drop(e, habit_list: HabitList):
     elements = ui.context.client.elements
@@ -23,7 +23,7 @@ async def item_drop(e, habit_list: HabitList):
     ]
     habit_list.order = [str(x.id) for x in habits]
     habit_list.update_habit_status(habits)
-    logger.info(f"New order: {habits}, New status: {[habit.status for habit in habits]}")
+    logger.info(f"Item dropped: {dragged.habit.name}, New index: {e.args['new_index']}")
     add_ui.refresh()
 
 @ui.refreshable
@@ -32,23 +32,16 @@ def add_ui(habit_list: HabitList):
         for item in habit_list.habits:
             with components.HabitOrderCard(item):
                 with ui.grid(columns=12, rows=1).classes("gap-0 items-center"):
-                    if item.status == 'completed':
+                    if item.status == HabitStatus.ARCHIVED:
                         name = ui.label(item.name)
+                        name.classes("col-span-10 col-10")
                     else:
                         name = HabitNameInput(item)
-                    name.classes("col-span-3 col-3")
+                        name.classes("col-span-3 col-3")
                     name.props("borderless")
 
-                    ui.space().classes("col-span-6")
-
-                    star = HabitStarCheckbox(item, add_ui.refresh)
-                    star.classes("col-span-1")
-
-                    status_label = ui.label(item.status)
-                    status_label.classes("col-span-1")
-
                     delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
-                    delete.classes("col-span-1")
+                    delete.classes("col-span-2")
 
 def order_page_ui(habit_list: HabitList):
     with layout():
