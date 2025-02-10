@@ -1,4 +1,5 @@
 import json
+import logging
 from nicegui import events, ui
 from beaverhabits.app.db import User
 from beaverhabits.frontend.components import menu_header
@@ -7,7 +8,7 @@ from beaverhabits.storage.meta import get_root_path
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
-def import_from_json(text: str) -> HabitList:
+async def import_from_json(text: str) -> HabitList:
     data = json.loads(text)
     habit_list = DictHabitList(data)
     if not habit_list.habits:
@@ -15,29 +16,46 @@ def import_from_json(text: str) -> HabitList:
     return habit_list
 
 def import_ui_page(user: User):
-    with ui.dialog() as dialog, ui.card().classes("w-64"):
-        ui.label("Are you sure? All your current habits will be merged with the imported ones.")
-        with ui.row():
-            ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
-            ui.button("No", on_click=lambda: dialog.submit("No"))
+    logging.info("Import UI page accessed")
+
+    async def get_current_habit_list():
+        current_habit_list = await user_storage.get_user_habit_list(user)
+        if current_habit_list is None:
+            current_habit_list = DictHabitList({"habits": []})
+        return current_habit_list
 
     async def handle_upload(e: events.UploadEventArguments):
         try:
+            text = e.content.read().decode("utf-8")
+            imported_habit_list = await import_from_json(text)
+            current_habit_list = await get_current_habit_list()
+
+            to_add = len(imported_habit_list.habits)
+            to_merge = len(set(current_habit_list.habits) & set(imported_habit_list.habits))
+
+            with ui.dialog() as dialog, ui.card().classes("w-64"):
+                ui.label(f"Are you sure? {to_add} habits will be added and {to_merge} habits will be merged.")
+                with ui.row():
+                    ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
+                    ui.button("No", on_click=lambda: dialog.submit("No"))
+
             result = await dialog
             if result != "Yes":
                 return
 
-            text = e.content.read().decode("utf-8")
-            imported_habit_list = import_from_json(text)
             merged_habit_list = await user_storage.merge_user_habit_list(user, imported_habit_list)
+            await user_storage.save_user_habit_list(user, merged_habit_list)
+
             ui.notify(
-                f"Imported and merged {len(imported_habit_list.habits)} habits",
+                f"Imported and merged {to_add} habits",
                 position="top",
                 color="positive",
             )
         except json.JSONDecodeError:
+            logging.error("Import failed: Invalid JSON")
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
         except Exception as error:
+            logging.error(f"Import failed: {str(error)}")
             ui.notify(str(error), color="negative", position="top")
 
     menu_header("Import", target=get_root_path())
