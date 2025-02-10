@@ -1,4 +1,3 @@
-import logging
 from typing import Optional
 
 from nicegui import background_tasks, core
@@ -8,10 +7,6 @@ from beaverhabits.app import crud
 from beaverhabits.app.db import User
 from beaverhabits.storage.dict import DictHabitList
 from beaverhabits.storage.storage import UserStorage
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 class DatabasePersistentDict(observables.ObservableDict):
