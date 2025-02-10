@@ -1,12 +1,7 @@
 from nicegui import ui
 
 from beaverhabits.frontend import components
-from beaverhabits.frontend.components import (
-    HabitAddButton,
-    HabitDeleteButton,
-    HabitNameInput,
-    HabitStarCheckbox,
-)
+from beaverhabits.frontend.components import HabitAddButton, HabitDeleteButton, HabitNameInput
 from beaverhabits.frontend.layout import layout
 from beaverhabits.logging import logger
 from beaverhabits.storage.storage import HabitList, HabitStatus
@@ -48,16 +43,11 @@ def add_ui(habit_list: HabitList):
                         name = HabitNameInput(item)
                     else:
                         name = ui.label(item.name)
-                    name.classes("col-span-3 col-3")
+                    name.classes("col-span-9")
                     name.props("borderless")
 
-                    ui.space().classes("col-span-7")
-
-                    star = HabitStarCheckbox(item, add_ui.refresh)
-                    star.classes("col-span-1")
-
                     delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
-                    delete.classes("col-span-1")
+                    delete.classes("col-span-3")
 
 def order_page_ui(habit_list: HabitList):
     with layout():
