@@ -11,13 +11,6 @@ from beaverhabits.frontend.layout import layout
 from beaverhabits.logging import logger
 from beaverhabits.storage.storage import HabitList
 
-class Habit:
-    def __init__(self, id, name, star, status):
-        self.id = id
-        self.name = name
-        self.star = star
-        self.status = status
-
 async def item_drop(e, habit_list: HabitList):
     elements = ui.context.client.elements
     dragged = elements[int(e.args["id"][1:])]
@@ -29,18 +22,20 @@ async def item_drop(e, habit_list: HabitList):
         if isinstance(x, components.HabitOrderCard) and x.habit
     ]
     habit_list.order = [str(x.id) for x in habits]
-    logger.info(f"New order: {habits}")
+    habit_list.update_habit_status(habits)
+    logger.info(f"New order: {habits}, New status: {[habit.status for habit in habits]}")
+    add_ui.refresh()
 
 @ui.refreshable
 def add_ui(habit_list: HabitList):
-    habits = habit_list.habits
-    habits.sort(key=lambda x: (x.star, x.status), reverse=True)
-
     with ui.column().classes("sortable").classes("gap-3"):
-        for item in habits:
+        for item in habit_list.habits:
             with components.HabitOrderCard(item):
                 with ui.grid(columns=12, rows=1).classes("gap-0 items-center"):
-                    name = HabitNameInput(item)
+                    if item.status == 'completed':
+                        name = ui.label(item.name)
+                    else:
+                        name = HabitNameInput(item)
                     name.classes("col-span-3 col-3")
                     name.props("borderless")
 
@@ -81,6 +76,3 @@ def order_page_ui(habit_list: HabitList):
     """
     )
     ui.on("item_drop", lambda e: item_drop(e, habit_list))
-
-
-In the rewritten code, I have added a `Habit` class to enhance the habit data structure with a status. I have also improved the sorting logic in the `add_ui` function to sort habits based on both star and status. Additionally, I have added a status label to display the status of each habit.
