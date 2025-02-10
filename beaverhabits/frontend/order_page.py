@@ -13,6 +13,7 @@ async def item_drop(e, habit_list: HabitList):
     dragged.move(target_index=e.args["new_index"])
 
     habit_list.update_order(dragged.habit, e.args["new_index"])
+    habit_list.update_status()
     logger.info(f"New order: {habit_list.order}")
     add_ui.refresh()
 
