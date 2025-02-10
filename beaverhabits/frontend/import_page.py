@@ -25,10 +25,11 @@ def import_ui_page(user: User):
             if existing_habit_list:
                 added = len(set(to_habit_list.habits) - set(existing_habit_list.habits))
                 merged = len(set(to_habit_list.habits) & set(existing_habit_list.habits))
-                logging.info(f"Added: {added}, Merged: {merged}")
+                unchanged = len(existing_habit_list.habits) - added - merged
+                logging.info(f"Added: {added}, Merged: {merged}, Unchanged: {unchanged}")
                 
                 with ui.dialog() as dialog, ui.card().classes("w-64"):
-                    ui.label(f"Are you sure? {added} new habit(s) and {merged} merged habit(s) will be imported.")
+                    ui.label(f"Are you sure? {added} new habit(s), {merged} merged habit(s), and {unchanged} unchanged habit(s) will be imported.")
                     with ui.row():
                         ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
                         ui.button("No", on_click=lambda: dialog.submit("No"))
