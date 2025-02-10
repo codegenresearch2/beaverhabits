@@ -139,8 +139,9 @@ class DictHabitList(HabitList[DictHabit]):
     @property
     def habits(self) -> List[DictHabit]:
         valid_habits = [habit for habit in self.data.get("habits", []) if habit["status"] != "soft_delete"]
-        valid_habits.sort(key=lambda x: self.order.index(str(x.id)) if str(x.id) in self.order else float("inf"))
-        return valid_habits
+        habits_order = {habit["id"]: habit for habit in valid_habits}
+        sorted_habits = [habits_order[habit_id] for habit_id in self.order if habit_id in habits_order]
+        return sorted_habits
 
     @property
     def order(self) -> List[str]:
