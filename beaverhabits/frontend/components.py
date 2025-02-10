@@ -31,4 +31,18 @@ class HabitAddButton(ui.input):
         self.set_value("")
         logger.info(f"Added new habit: {self.value}")
 
+# Define HabitDeleteButton class to address the oracle feedback
+class HabitDeleteButton(ui.button):
+    def __init__(self, habit: Habit, habit_list: HabitList, refresh: Callable) -> None:
+        super().__init__(on_click=self._delete_habit, icon=icons.DELETE)
+        self.habit = habit
+        self.habit_list = habit_list
+        self.refresh = refresh
+
+    async def _delete_habit(self):
+        logger.info(f"Deleting habit: {self.habit.name}")
+        await self.habit_list.remove(self.habit)
+        self.refresh()
+        logger.info(f"Deleted habit: {self.habit.name}")
+
 # Rest of the code remains the same
