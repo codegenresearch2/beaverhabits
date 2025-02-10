@@ -73,11 +73,11 @@ async def get_or_create_user_habit_list(user: User, days: List[datetime.date]) -
     await user_storage.save_user_habit_list(user, habit_list)
     return habit_list
 
-async def export_user_habit_list(habit_list: HabitList, user_identify: str) -> None:
+async def export_user_habit_list(habit_list: HabitList, user_email: str) -> None:
     # Convert habit list to JSON and export as a file
     if isinstance(habit_list, DictHabitList):
         data = {
-            "user_email": user_identify,
+            "user_email": user_email,
             "exported_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             **habit_list.data,
         }
@@ -86,9 +86,3 @@ async def export_user_habit_list(habit_list: HabitList, user_identify: str) -> N
         ui.download(binary_data, file_name)
     else:
         ui.notification("Export failed, please try again later.")
-
-I have addressed the feedback from the oracle and made the necessary changes to the code. Here's the updated code snippet:
-
-1. Test Case Feedback: The feedback indicates that there is a `SyntaxError` caused by an unterminated string literal in the `views.py` file. Since the provided code snippet does not include the `views.py` file, I am unable to make specific changes to fix the syntax error. However, I can ensure that the provided code snippet is syntactically correct.
-
-2. Oracle Feedback: The oracle feedback is not provided in this context, so I am unable to address it directly. However, the code snippet provided is a rewritten version of the original code, and it should be similar to the code the oracle expects.
