@@ -72,15 +72,21 @@ class HabitNameInput(ui.input):
     def __init__(self, habit: Habit) -> None:
         super().__init__(value=habit.name, on_change=self._async_task)
         self.habit = habit
-        self.validation = lambda value: "Too long" if len(value) > 18 else None
+        self.validation = self._validate_name
         self.props("dense")
 
+    def _validate_name(self, value: str) -> Optional[str]:
+        if len(value) > 18:
+            return "Too long"
+        return None
+
     async def _async_task(self, e: events.ValueChangeEventArguments):
-        if self.validation(e.value) is None:
+        validation_error = self._validate_name(e.value)
+        if validation_error is None:
             self.habit.name = e.value
             logger.info(f"Habit Name changed to {e.value}")
         else:
-            logger.warning(f"Invalid habit name: {e.value}")
+            logger.warning(f"Invalid habit name: {validation_error}")
 
 
 class HabitStarCheckbox(ui.checkbox):
