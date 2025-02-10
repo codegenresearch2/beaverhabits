@@ -48,10 +48,7 @@ class DictRecord(CheckedRecord, DictStorage):
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
     def __init__(self, name: str):
-        self.data["name"] = name
-        self.data["records"] = []
-        self.data["id"] = generate_short_hash(name)
-        self.data["star"] = False
+        self.data = {"name": name, "records": [], "id": generate_short_hash(name), "star": False}
 
     @property
     def id(self) -> str:
@@ -108,7 +105,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
     def __init__(self):
-        self.data["habits"] = []
+        self.data = {"habits": []}
 
     @property
     def habits(self) -> list[DictHabit]:
