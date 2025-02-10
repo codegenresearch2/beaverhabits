@@ -50,9 +50,11 @@ class DictRecord(CheckedRecord, DictStorage):
 class DictHabit(Habit[DictRecord], DictStorage):
     @property
     def id(self) -> str:
-        if "id" not in self.data:
-            self.data["id"] = generate_short_hash(self.name)
-        return self.data["id"]
+        return self.data.get("id", "")
+
+    @id.setter
+    def id(self, value: str) -> None:
+        self.data["id"] = value
 
     @property
     def name(self) -> str:
@@ -63,11 +65,11 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["name"] = value
 
     @property
-    def star(self) -> bool:
-        return self.data.get("star", False)
+    def star(self) -> int:
+        return self.data.get("star", 0)
 
     @star.setter
-    def star(self, value: bool) -> None:
+    def star(self, value: int) -> None:
         self.data["star"] = value
 
     @property
@@ -88,19 +90,18 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return self.name
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, DictHabit):
-            return False
-        return self.id == other.id
+        return isinstance(other, DictHabit) and self.id == other.id
 
     def __hash__(self) -> int:
         return hash(self.id)
 
     def merge(self, other: 'DictHabit') -> 'DictHabit':
         merged_habit = DictHabit()
-        merged_habit.data["id"] = self.id
-        merged_habit.data["name"] = self.name
-        merged_habit.data["star"] = self.star
-        merged_habit.data["records"] = self.records + other.records
+        merged_habit.data = {**self.data, **other.data}
+        merged_habit.id = self.id
+        merged_habit.name = self.name
+        merged_habit.star = self.star
+        merged_habit.data["records"] = list(set(self.data["records"] + other.data["records"]))
         return merged_habit
 
 
@@ -108,9 +109,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
     def habits(self) -> list[DictHabit]:
-        habits = [DictHabit(d) for d in self.data["habits"]]
-        habits.sort(key=lambda x: x.star, reverse=True)
-        return habits
+        return [DictHabit(d) for d in self.data["habits"]]
 
     async def get_habit_by(self, habit_id: str) -> Optional[DictHabit]:
         for habit in self.habits:
@@ -118,8 +117,10 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                 return habit
 
     async def add(self, name: str) -> None:
-        d = {"name": name, "records": [], "id": generate_short_hash(name)}
-        self.data["habits"].append(d)
+        habit = DictHabit()
+        habit.name = name
+        habit.id = generate_short_hash(name)
+        self.data["habits"].append(habit.data)
 
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
