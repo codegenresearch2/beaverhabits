@@ -75,7 +75,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return self.data.get("star", False)
 
     @star.setter
-    def star(self, value: bool) -> None:
+    def star(self, value: int) -> None:
         self.data["star"] = value
 
     @property
@@ -127,6 +127,9 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                     else float("inf")
                 )
             )
+
+        # Sort by status
+        habits.sort(key=lambda x: x.status)
 
         return habits
 
