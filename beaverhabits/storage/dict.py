@@ -50,11 +50,9 @@ class DictRecord(CheckedRecord, DictStorage):
 class DictHabit(Habit[DictRecord], DictStorage):
     @property
     def id(self) -> str:
-        return self.data.get("id", "")
-
-    @id.setter
-    def id(self, value: str) -> None:
-        self.data["id"] = value
+        if "id" not in self.data:
+            self.data["id"] = generate_short_hash(self.name)
+        return self.data["id"]
 
     @property
     def name(self) -> str:
@@ -65,12 +63,12 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["name"] = value
 
     @property
-    def star(self) -> int:
-        return int(self.data.get("star", False))
+    def star(self) -> bool:
+        return bool(self.data.get("star", False))
 
     @star.setter
-    def star(self, value: int) -> None:
-        self.data["star"] = bool(value)
+    def star(self, value: bool) -> None:
+        self.data["star"] = value
 
     @property
     def records(self) -> list[DictRecord]:
