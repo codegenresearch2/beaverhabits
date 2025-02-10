@@ -1,15 +1,8 @@
 from nicegui import ui
-from beaverhabits.frontend.components import (
-    HabitAddButton,
-    HabitDeleteButton,
-    HabitAddCard,  # Updated component usage
-    HabitStarCheckbox,
-)
+from beaverhabits.frontend.components import HabitAddButton, HabitDeleteButton, HabitStarCheckbox, HabitAddCard, HabitNameInput
 from beaverhabits.frontend.layout import layout
 from beaverhabits.storage.storage import HabitList
-import logging
-
-logger = logging.getLogger(__name__)
+from beaverhabits.logging import logger
 
 grid_classes = "w-full gap-0 items-center"
 
@@ -20,8 +13,8 @@ def validate_habit_name(name):
 
 @ui.refreshable
 def habit_item(item, habit_list):
-    with HabitAddCard(item, habit_list, habit_item.refresh):  # Updated component usage
-        name = ui.label(item.name)  # Updated component usage
+    with HabitAddCard(item, habit_list, habit_item.refresh):
+        name = HabitNameInput(item)
         name.classes("col-span-7 break-all")
 
         star = HabitStarCheckbox(item, habit_item.refresh)
@@ -34,9 +27,7 @@ def habit_item(item, habit_list):
 
 @ui.refreshable
 def add_ui(habit_list: HabitList):
-    sorted_habits = sorted(habit_list.habits, key=lambda x: x.name)
-
-    for item in sorted_habits:
+    for item in habit_list.habits:
         habit_item(item, habit_list)
 
 @ui.refreshable
@@ -74,7 +65,7 @@ def about_page():
     # TODO: Add about page UI components here
     pass
 
-async def handle_item_drop(e):
+async def item_drop(e):
     logger.info(f"Item dropped: {e.args}")
     # TODO: Add logic to handle item drop event
 
