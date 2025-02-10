@@ -48,5 +48,4 @@ class UserDatabaseStorage(UserStorage[DictHabitList]):
             return other
 
         merged_list = await current.merge(other)
-        await crud.update_user_habit_list(user, merged_list.data)
         return merged_list
