@@ -15,7 +15,7 @@ from beaverhabits.utils import generate_short_hash
 
 user_storage = get_user_storage()
 
-def create_dummy_habit_list(days: List[datetime.date]) -> HabitList:
+def dummy_habit_list(days: List[datetime.date]) -> HabitList:
     pick = lambda: random.randint(0, 3) == 0
     items = [
         {
@@ -29,17 +29,17 @@ def create_dummy_habit_list(days: List[datetime.date]) -> HabitList:
     ]
     return DictHabitList({"habits": items})
 
-def get_habit_list(storage: SessionStorage | UserStorage) -> HabitList | None:
+def get_session_habit_list() -> HabitList | None:
     try:
-        return storage.get_user_habit_list()
+        return session_storage.get_user_habit_list()
     except Exception as e:
-        logging.error(f"Error getting habit list: {e}")
+        logging.error(f"Error getting session habit list: {e}")
         return None
 
-async def get_habit(user: User, habit_id: str, storage: SessionStorage | UserStorage) -> Habit:
-    habit_list = await get_habit_list(storage)
+async def get_session_habit(habit_id: str) -> Habit:
+    habit_list = get_session_habit_list()
     if habit_list is None:
-        raise HTTPException(status_code=404, detail="Habit list not found")
+        raise HTTPException(status_code=404, detail="Session habit list not found")
 
     habit = await habit_list.get_habit_by(habit_id)
     if habit is None:
@@ -47,30 +47,47 @@ async def get_habit(user: User, habit_id: str, storage: SessionStorage | UserSto
 
     return habit
 
-async def get_or_create_habit_list(user: User, days: List[datetime.date], storage: SessionStorage | UserStorage) -> HabitList:
-    habit_list = await get_habit_list(storage)
+def get_or_create_session_habit_list(days: List[datetime.date]) -> HabitList:
+    habit_list = get_session_habit_list()
     if habit_list is not None:
         return habit_list
 
-    habit_list = create_dummy_habit_list(days)
-    if storage == user_storage:
-        await user_storage.save_user_habit_list(user, habit_list)
-    else:
-        storage.save_user_habit_list(habit_list)
+    habit_list = dummy_habit_list(days)
+    session_storage.save_user_habit_list(habit_list)
     return habit_list
 
-async def merge_habit_lists(user: User, other: HabitList) -> HabitList:
+async def get_user_habit_list(user: User) -> HabitList | None:
     try:
-        return await user_storage.merge_user_habit_list(user, other)
+        return await user_storage.get_user_habit_list(user)
     except Exception as e:
-        logging.error(f"Error merging habit lists: {e}")
-        raise HTTPException(status_code=500, detail="Error merging habit lists")
+        logging.error(f"Error getting user habit list: {e}")
+        return None
 
-async def export_habit_list(habit_list: HabitList, user_identify: str) -> None:
+async def get_user_habit(user: User, habit_id: str) -> Habit:
+    habit_list = await get_user_habit_list(user)
+    if habit_list is None:
+        raise HTTPException(status_code=404, detail="User habit list not found")
+
+    habit = await habit_list.get_habit_by(habit_id)
+    if habit is None:
+        raise HTTPException(status_code=404, detail="Habit not found")
+
+    return habit
+
+async def get_or_create_user_habit_list(user: User, days: List[datetime.date]) -> HabitList:
+    habit_list = await get_user_habit_list(user)
+    if habit_list is not None:
+        return habit_list
+
+    habit_list = dummy_habit_list(days)
+    await user_storage.save_user_habit_list(user, habit_list)
+    return habit_list
+
+async def export_user_habit_list(habit_list: HabitList, user_email: str) -> None:
     try:
         if isinstance(habit_list, DictHabitList):
             data = {
-                "user_email": user_identify,
+                "user_email": user_email,
                 "exported_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 **habit_list.data,
             }
@@ -80,16 +97,5 @@ async def export_habit_list(habit_list: HabitList, user_identify: str) -> None:
         else:
             ui.notification("Export failed, please try again later.")
     except Exception as e:
-        logging.error(f"Error exporting habit list: {e}")
-        raise HTTPException(status_code=500, detail="Error exporting habit list")
-
-
-In this rewritten code, I have added error handling and logging as per the user's preference. I have also refactored the code for better organization. I have created a `get_habit_list` function that takes a `storage` argument, which can be either `session_storage` or `user_storage`. This function is used to get the habit list from the specified storage.
-
-I have also created a `get_or_create_habit_list` function that takes a `storage` argument, which can be either `session_storage` or `user_storage`. This function is used to get the habit list from the specified storage, or create a new one if it doesn't exist.
-
-I have added a `merge_habit_lists` function that merges two habit lists, as per the user's preference. This function uses the `merge_user_habit_list` method of the `user_storage` object.
-
-I have also added a `export_habit_list` function that exports a habit list to a JSON file, as per the user's preference. This function uses the `ui.download` function to download the JSON file.
-
-Finally, I have added logging statements to log errors that occur during the execution of the functions.
+        logging.error(f"Error exporting user habit list: {e}")
+        raise HTTPException(status_code=500, detail="Error exporting user habit list")
