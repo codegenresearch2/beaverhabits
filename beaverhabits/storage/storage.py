@@ -1,4 +1,4 @@
-import datetime
+from enum import Enum
 from typing import List, Optional, Protocol
 
 from beaverhabits.app.db import User
