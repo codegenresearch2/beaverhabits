@@ -1,5 +1,4 @@
 from nicegui import ui
-
 from beaverhabits.frontend import components
 from beaverhabits.frontend.components import (
     HabitAddButton,
@@ -13,9 +12,10 @@ from beaverhabits.storage.storage import HabitList
 
 
 class Habit:
-    def __init__(self, name, status=None):
+    def __init__(self, id, name, status="default"):
+        self.id = id
         self.name = name
-        self.status = status if status is not None else "default"
+        self.status = status
 
 
 class DictHabit(dict):
@@ -58,6 +58,11 @@ async def item_drop(e, habit_list: HabitList):
     dragged = elements[int(e.args["id"][1:])]
     dragged.move(target_index=e.args["new_index"])
 
+    # Log the details of the item drop event
+    logger.info(f"Item dropped: ID={e.args['id']}, New Index={e.args['new_index']}")
+
+    # Update habit order
+    assert dragged.parent_slot is not None, "Dragged element has no parent slot"
     habits = [
         x.habit
         for x in dragged.parent_slot.children
@@ -65,6 +70,9 @@ async def item_drop(e, habit_list: HabitList):
     ]
     habit_list.order = [str(habit.id) for habit in habits]
     logger.info(f"New order: {habits}")
+
+    # Refresh the UI to reflect the new order
+    add_ui.refresh()
 
 
 @ui.refreshable
@@ -83,7 +91,7 @@ def add_ui(habit_list: HabitList):
                     star.classes("col-span-1")
 
                     delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
-                    star.classes("col-span-1")
+                    delete.classes("col-span-1")
 
 
 def order_page_ui(habit_list: HabitList):
