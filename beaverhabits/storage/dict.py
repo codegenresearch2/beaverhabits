@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, List
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
@@ -53,6 +53,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
             self.data["id"] = generate_short_hash(self.name)
         return self.data["id"]
 
+    @id.setter
+    def id(self, value: str) -> None:
+        self.data["id"] = value
+
     @property
     def name(self) -> str:
         return self.data["name"]
@@ -70,7 +74,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["star"] = value
 
     @property
-    def records(self) -> list[DictRecord]:
+    def records(self) -> List[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
@@ -80,11 +84,19 @@ class DictHabit(Habit[DictRecord], DictStorage):
             data = {"day": day.strftime(DAY_MASK), "done": done}
             self.data["records"].append(data)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DictHabit):
+            return False
+        return self.id == other.id and self.name == other.name and self.star == other.star and self.records == other.records
+
+    def __hash__(self) -> int:
+        return hash((self.id, self.name, self.star, tuple(self.records)))
+
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
-    def habits(self) -> list[DictHabit]:
+    def habits(self) -> List[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
         habits.sort(key=lambda x: x.star, reverse=True)
         return habits
@@ -100,3 +112,11 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
+
+    async def merge(self, other: 'DictHabitList') -> None:
+        for habit in other.habits:
+            existing_habit = await self.get_habit_by(habit.id)
+            if existing_habit:
+                existing_habit.records.extend(habit.records)
+            else:
+                self.data["habits"].append(habit.data)
