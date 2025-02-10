@@ -9,9 +9,10 @@ from beaverhabits.frontend.components import (
 )
 from beaverhabits.frontend.layout import layout
 from beaverhabits.logging import logger
-from beaverhabits.storage.storage import DictHabitList
+from beaverhabits.storage.storage import DictHabitList, HabitStatus
 
 async def item_drop(e, habit_list: DictHabitList):
+    logger.info(f"Item dropped: {e.args['id']} to index {e.args['new_index']}")
     elements = ui.context.client.elements
     dragged = elements[int(e.args["id"][1:])]
     dragged.move(target_index=e.args["new_index"])
@@ -23,30 +24,33 @@ async def item_drop(e, habit_list: DictHabitList):
         if isinstance(x, components.HabitOrderCard) and x.habit
     ]
     habit_list.order = [str(x.id) for x in habits]
+    habit_list.update_status(e.args['new_index'])
     logger.info(f"New order: {habits}")
+    add_ui.refresh()
 
 @ui.refreshable
-def add_ui(habit_list: DictHabitList, status: str):
+def add_ui(habit_list: DictHabitList):
     with ui.column().classes("sortable").classes("gap-3"):
-        for item in habit_list.filter_by_status(status):
-            with components.HabitOrderCard(item):
-                with ui.grid(columns=12, rows=1).classes("gap-0 items-center"):
-                    name = HabitNameInput(item)
-                    name.classes("col-span-3 col-3")
-                    name.props("borderless")
+        for item in habit_list.habits:
+            if item.status == HabitStatus.ACTIVE:
+                with components.HabitOrderCard(item):
+                    with ui.grid(columns=12, rows=1).classes("gap-0 items-center"):
+                        name = HabitNameInput(item)
+                        name.classes("col-span-3 col-3")
+                        name.props("borderless")
 
-                    ui.space().classes("col-span-7")
+                        ui.space().classes("col-span-7")
 
-                    star = HabitStarCheckbox(item, add_ui.refresh)
-                    star.classes("col-span-1")
+                        star = HabitStarCheckbox(item, add_ui.refresh)
+                        star.classes("col-span-1")
 
-                    delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
-                    delete.classes("col-span-1")
+                        delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
+                        delete.classes("col-span-1")
 
-def order_page_ui(habit_list: DictHabitList, status: str):
+def order_page_ui(habit_list: DictHabitList):
     with layout():
         with ui.column().classes("w-full pl-1 items-center gap-3"):
-            add_ui(habit_list, status)
+            add_ui(habit_list)
 
             with components.HabitOrderCard():
                 with ui.grid(columns=12, rows=1).classes("gap-0 items-center"):
