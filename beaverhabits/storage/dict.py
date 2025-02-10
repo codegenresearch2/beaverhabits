@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
@@ -71,7 +71,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["star"] = bool(value)
 
     @property
-    def records(self) -> list[DictRecord]:
+    def records(self) -> List[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
@@ -108,15 +108,15 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
         self.data = {"habits": []}
 
     @property
-    def habits(self) -> list[DictHabit]:
+    def habits(self) -> List[DictHabit]:
         return [DictHabit(d) for d in self.data["habits"]]
 
     @property
-    def order(self) -> list[str]:
+    def order(self) -> List[str]:
         return [habit.id for habit in self.habits]
 
     @order.setter
-    def order(self, value: list[str]) -> None:
+    def order(self, value: List[str]) -> None:
         self.data["habits"] = [habit.data for habit in sorted(self.habits, key=lambda h: value.index(h.id))]
 
     async def get_habit_by(self, habit_id: str) -> Optional[DictHabit]:
