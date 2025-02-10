@@ -23,14 +23,14 @@ def import_ui_page(user: User):
         try:
             text = e.content.read().decode("utf-8")
             to_habit_list = await import_from_json(text)
-            from_habit_list = user_storage_module.get_user_habit_list(user)
+            existing_habit_list = await user_storage_module.get_user_habit_list(user)
 
-            if from_habit_list:
-                added, merged, unchanged = from_habit_list.merge_and_categorize(to_habit_list)
-                user_storage_module.save_user_habit_list(user, merged)
+            if existing_habit_list:
+                added, merged, unchanged = existing_habit_list.merge_and_categorize(to_habit_list)
+                await user_storage_module.save_user_habit_list(user, merged)
                 logging.info(f"Imported {len(to_habit_list.habits)} habits, added {len(added)}, merged {len(merged)}, unchanged {len(unchanged)}.")
             else:
-                user_storage_module.save_user_habit_list(user, to_habit_list)
+                await user_storage_module.save_user_habit_list(user, to_habit_list)
                 logging.info(f"Imported {len(to_habit_list.habits)} new habits.")
 
             ui.notify(
