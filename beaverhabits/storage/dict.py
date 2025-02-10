@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import datetime
 from typing import List, Optional
 
-from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
+from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList, HabitStatus
 from beaverhabits.utils import generate_short_hash
 
 DAY_MASK = "%Y-%m-%d"
@@ -14,6 +14,21 @@ class DictStorage:
 
 @dataclass
 class DictRecord(CheckedRecord, DictStorage):
+    """
+    Read (d1~d3)
+    persistent    ->     memory      ->     view
+    d0: [x]              d0: [x]
+                                            d1: [ ]
+    d2: [x]              d2: [x]            d2: [x]
+                                            d3: [ ]
+
+    Update:
+    view(update)  ->     memory      ->     persistent
+    d1: [ ]
+    d2: [ ]              d2: [ ]            d2: [x]
+    d3: [x]              d3: [x]            d3: [ ]
+    """
+
     @property
     def day(self) -> datetime.date:
         date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
@@ -56,6 +71,14 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["star"] = value
 
     @property
+    def status(self) -> HabitStatus:
+        return self.data.get("status", HabitStatus.ACTIVE)
+
+    @status.setter
+    def status(self, value: HabitStatus) -> None:
+        self.data["status"] = value
+
+    @property
     def records(self) -> list[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
@@ -94,17 +117,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
     def habits(self) -> list[DictHabit]:
-        habits = [DictHabit(d) for d in self.data["habits"]]
+        habits = [DictHabit(d) for d in self.data["habits"] if DictHabit(d).status != HabitStatus.ARCHIVED]
 
-        # Sort by order
-        if self.order:
-            habits.sort(
-                key=lambda x: (
-                    self.order.index(str(x.id))
-                    if str(x.id) in self.order
-                    else float("inf")
-                )
-            )
+        # Sort by order and then by status
+        habits.sort(key=lambda x: (self.order.index(str(x.id)) if str(x.id) in self.order else float("inf"), x.status.value))
 
         return habits
 
@@ -122,10 +138,14 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                 return habit
 
     async def add(self, name: str) -> None:
-        d = {"name": name, "records": [], "id": generate_short_hash(name)}
+        if not name:
+            raise ValueError("Name cannot be empty")
+        d = {"name": name, "records": [], "id": generate_short_hash(name), "status": HabitStatus.ACTIVE}
         self.data["habits"].append(d)
 
     async def remove(self, item: DictHabit) -> None:
+        if item not in self.habits:
+            raise ValueError("Habit not found in the list")
         self.data["habits"].remove(item.data)
 
     async def merge(self, other: "DictHabitList") -> "DictHabitList":
@@ -139,12 +159,3 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                     result.add(new_habit)
 
         return DictHabitList({"habits": [h.data for h in result]})
-
-
-The provided code snippet is a Python implementation of a habit tracking system. The code defines several classes to handle the storage and management of habits and their records. The classes include `DictStorage`, `DictRecord`, `DictHabit`, and `DictHabitList`.
-
-The code follows the rules provided, which include managing habit status effectively, enhancing UI responsiveness and interactivity, and maintaining clear separation of concerns. The code is already well-structured and follows the principles of separation of concerns by defining distinct classes for storage, records, habits, and habit lists.
-
-The code could be further improved by adding more error handling and validation, as well as adding more documentation and comments to explain the functionality of each class and method. Additionally, the code could be refactored to use more modern Python features, such as type hinting and async/await syntax, to improve readability and maintainability.
-
-However, since the rules do not specifically mention any changes to be made to the code, the provided code snippet remains unchanged.
