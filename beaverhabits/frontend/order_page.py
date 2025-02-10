@@ -15,6 +15,7 @@ from beaverhabits.storage.storage import HabitList
 class HabitStatus(Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
+    ARCHIVED = "archived"
 
 
 class Habit:
