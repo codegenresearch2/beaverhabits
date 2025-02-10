@@ -1,6 +1,6 @@
+from typing import List, Optional
 from dataclasses import dataclass, field
 import datetime
-from typing import List, Optional
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList, HabitStatus
 from beaverhabits.utils import generate_short_hash
@@ -75,7 +75,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return self.data.get("star", False)
 
     @star.setter
-    def star(self, value: bool) -> None:
+    def star(self, value: int) -> None:
         self.data["star"] = value
 
     @property
