@@ -138,8 +138,7 @@ class DictHabitList(HabitList[DictHabit]):
 
     @property
     def habits(self) -> List[DictHabit]:
-        valid_habits = [habit for habit in self.data.get("habits", []) if habit["status"] != "soft_delete"]
-        return valid_habits
+        return [DictHabit(habit) for habit in self.data.get("habits", []) if habit["status"] != "soft_delete"]
 
     @property
     def order(self) -> List[str]:
@@ -153,6 +152,7 @@ class DictHabitList(HabitList[DictHabit]):
         for habit in self.habits:
             if habit.id == habit_id:
                 return habit
+        return None
 
     async def add(self, name: str) -> None:
         habit_data = {
@@ -168,5 +168,5 @@ class DictHabitList(HabitList[DictHabit]):
 
     async def merge(self, other: "DictHabitList") -> "DictHabitList":
         merged_habits = set(self.habits).symmetric_difference(set(other.habits))
-        merged_data = {"habits": [h.data for h in merged_habits], "order": self.order}
+        merged_data = {"habits": [habit.data for habit in merged_habits], "order": self.order}
         return DictHabitList(merged_data)
