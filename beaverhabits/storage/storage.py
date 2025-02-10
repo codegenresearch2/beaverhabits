@@ -23,7 +23,7 @@ class HabitStatus(Enum):
     ACTIVE = "Active"
     ARCHIVED = "Archived"
 
-class Habit[R: CheckedRecord](Protocol):
+class Habit(Protocol):
     @property
     def id(self) -> str | int: ...
 
@@ -45,13 +45,6 @@ class Habit[R: CheckedRecord](Protocol):
     @status.setter
     def status(self, value: HabitStatus) -> None: ...
 
-    @property
-    def records(self) -> List[R]: ...
-
-    @property
-    def ticked_days(self) -> list[datetime.date]:
-        return [r.day for r in self.records if r.done]
-
     async def tick(self, day: datetime.date, done: bool) -> None: ...
 
     def __str__(self):
@@ -59,10 +52,10 @@ class Habit[R: CheckedRecord](Protocol):
 
     __repr__ = __str__
 
-class HabitList[H: Habit](Protocol):
+class HabitList(Protocol):
 
     @property
-    def habits(self) -> List[H]: ...
+    def habits(self) -> List[Habit]: ...
 
     @property
     def order(self) -> List[str]: ...
@@ -70,29 +63,19 @@ class HabitList[H: Habit](Protocol):
     @order.setter
     def order(self, value: List[str]) -> None: ...
 
-    async def add(self, name: str) -> None:
-        new_habit = H(name=name, status=HabitStatus.ACTIVE, records=[])
-        self.habits.append(new_habit)
+    async def get_habit_by(self, habit_id: str) -> Optional[Habit]: ...
 
-    async def remove(self, item: H) -> None:
-        self.habits.remove(item)
+class SessionStorage(Protocol):
+    def get_user_habit_list(self) -> Optional[HabitList]: ...
 
-    async def get_habit_by(self, habit_id: str) -> Optional[H]:
-        for habit in self.habits:
-            if habit.id == habit_id:
-                return habit
+    def save_user_habit_list(self, habit_list: HabitList) -> None: ...
 
-class SessionStorage[L: HabitList](Protocol):
-    def get_user_habit_list(self) -> Optional[L]: ...
+class UserStorage(Protocol):
+    async def get_user_habit_list(self, user: User) -> Optional[HabitList]: ...
 
-    def save_user_habit_list(self, habit_list: L) -> None: ...
+    async def save_user_habit_list(self, user: User, habit_list: HabitList) -> None: ...
 
-class UserStorage[L: HabitList](Protocol):
-    async def get_user_habit_list(self, user: User) -> Optional[L]: ...
-
-    async def save_user_habit_list(self, user: User, habit_list: L) -> None: ...
-
-    async def merge_user_habit_list(self, user: User, other: L) -> L:
+    async def merge_user_habit_list(self, user: User, other: HabitList) -> HabitList:
         current_list = await self.get_user_habit_list(user)
         if current_list is None:
             return other
