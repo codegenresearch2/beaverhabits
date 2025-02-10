@@ -12,25 +12,8 @@ async def item_drop(e, habit_list: HabitList):
     dragged = elements[int(e.args["id"][1:])]
     dragged.move(target_index=e.args["new_index"])
 
-    assert dragged.parent_slot is not None
-    habits = [
-        x.habit
-        for x in dragged.parent_slot.children
-        if isinstance(x, components.HabitOrderCard) and x.habit
-    ]
-    habit_list.order = [str(x.id) for x in habits]
-
-    if e.args['new_index'] == 0:
-        dragged.habit.status = HabitStatus.UNARCHIVED
-    elif e.args['new_index'] == len(habits) - 1:
-        dragged.habit.status = HabitStatus.ARCHIVED
-    else:
-        if habits[e.args['new_index'] - 1].status == HabitStatus.ARCHIVED or habits[e.args['new_index'] + 1].status == HabitStatus.ARCHIVED:
-            dragged.habit.status = HabitStatus.ARCHIVED
-        else:
-            dragged.habit.status = HabitStatus.UNARCHIVED
-
-    logger.info(f"New order: {habits}")
+    habit_list.update_order(dragged.habit, e.args["new_index"])
+    logger.info(f"New order: {habit_list.order}")
     add_ui.refresh()
 
 @ui.refreshable
@@ -46,10 +29,8 @@ def add_ui(habit_list: HabitList):
                     name.classes("col-span-9")
                     name.props("borderless")
 
-                    ui.space().classes("col-span-1")
-
                     delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
-                    delete.classes("col-span-2")
+                    delete.classes("col-span-3")
 
 def order_page_ui(habit_list: HabitList):
     with layout():
