@@ -104,8 +104,10 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
-    def __init__(self):
-        self.data = {"habits": []}
+    def __init__(self, habits: Optional[List[dict]] = None):
+        if habits is None:
+            habits = []
+        self.data = {"habits": habits}
 
     @property
     def habits(self) -> List[DictHabit]:
@@ -141,6 +143,4 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                     new_habit = await self_habit.merge(other_habit)
                     result.add(new_habit)
 
-        new_list = DictHabitList()
-        new_list.data["habits"] = [h.data for h in result]
-        return new_list
+        return DictHabitList(habits=[h.data for h in result])
