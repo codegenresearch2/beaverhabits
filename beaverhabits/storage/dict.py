@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, List
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
@@ -14,6 +14,9 @@ class DictStorage:
 
 @dataclass
 class DictRecord(CheckedRecord, DictStorage):
+    """
+    Represents a checked record with a day and a done status.
+    """
     @property
     def day(self) -> datetime.date:
         date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
@@ -29,6 +32,9 @@ class DictRecord(CheckedRecord, DictStorage):
 
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
+    """
+    Represents a habit with a name, records, and a star status.
+    """
     @property
     def id(self) -> str:
         if "id" not in self.data:
@@ -45,8 +51,6 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
     @name.setter
     def name(self, value: str) -> None:
-        if not self.validate_name(value):
-            raise ValueError("Invalid habit name")
         self.data["name"] = value
 
     @property
@@ -58,7 +62,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["star"] = value
 
     @property
-    def records(self) -> list[DictRecord]:
+    def records(self) -> List[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
@@ -87,17 +91,30 @@ class DictHabit(Habit[DictRecord], DictStorage):
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def validate_name(self, name: str) -> bool:
-        # Add your validation logic here
-        return True
+    def __str__(self) -> str:
+        return self.name
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
+    """
+    Represents a list of habits with an order property.
+    """
     @property
-    def habits(self) -> list[DictHabit]:
+    def habits(self) -> List[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
-        habits.sort(key=lambda x: x.star, reverse=True)
+        if "order" in self.data:
+            habits.sort(key=lambda x: self.data["order"].index(x.id) if x.id in self.data["order"] else len(self.data["order"]))
+        else:
+            habits.sort(key=lambda x: x.star, reverse=True)
         return habits
+
+    @property
+    def order(self) -> List[str]:
+        return self.data.get("order", [])
+
+    @order.setter
+    def order(self, value: List[str]) -> None:
+        self.data["order"] = value
 
     async def get_habit_by(self, habit_id: str) -> Optional[DictHabit]:
         for habit in self.habits:
@@ -105,8 +122,6 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                 return habit
 
     async def add(self, name: str) -> None:
-        if not self.validate_name(name):
-            raise ValueError("Invalid habit name")
         d = {"name": name, "records": [], "id": generate_short_hash(name)}
         self.data["habits"].append(d)
 
@@ -123,14 +138,3 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                     result.add(new_habit)
 
         return DictHabitList({"habits": [h.data for h in result]})
-
-    def validate_name(self, name: str) -> bool:
-        # Add your validation logic here
-        return True
-
-
-In the rewritten code, I have added a `validate_name` method to the `DictHabit` and `DictHabitList` classes to validate habit names for user input. This method can be customized to include specific validation logic.
-
-Additionally, I have added a placeholder `validate_name` method in both classes that currently returns `True` for all names. This is to ensure that the code runs without errors. You can replace the placeholder method with your own validation logic.
-
-The code also follows the rule of using cards for habit display. However, since the code snippet provided does not contain any UI-related code, I have not made any changes to implement this rule.
