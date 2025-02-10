@@ -2,6 +2,7 @@ import datetime
 import json
 import random
 import time
+from typing import List
 
 from fastapi import HTTPException
 from nicegui import ui
@@ -14,7 +15,7 @@ from beaverhabits.utils import generate_short_hash
 
 user_storage = get_user_dict_storage()
 
-def dummy_habit_list(days: List[datetime.date]) -> HabitList:
+def dummy_habit_list(days: List[datetime.date]):
     pick = lambda: random.randint(0, 3) == 0
     items = [
         {
@@ -64,7 +65,9 @@ async def get_user_habit(user: User, habit_id: str) -> Habit:
 
     return habit
 
-async def get_or_create_user_habit_list(user: User, days: List[datetime.date]) -> HabitList:
+async def get_or_create_user_habit_list(
+    user: User, days: List[datetime.date]
+) -> HabitList:
     habit_list = await get_user_habit_list(user)
     if habit_list is not None:
         return habit_list
@@ -73,11 +76,11 @@ async def get_or_create_user_habit_list(user: User, days: List[datetime.date]) -
     await user_storage.save_user_habit_list(user, habit_list)
     return habit_list
 
-async def export_user_habit_list(habit_list: HabitList, user_email: str) -> None:
+async def export_user_habit_list(habit_list: HabitList, user_identify: str) -> None:
     # Convert habit list to JSON and export as a file
     if isinstance(habit_list, DictHabitList):
         data = {
-            "user_email": user_email,
+            "user_email": user_identify,
             "exported_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             **habit_list.data,
         }
