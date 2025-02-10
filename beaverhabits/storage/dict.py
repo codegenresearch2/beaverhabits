@@ -50,12 +50,12 @@ class DictHabit(Habit[DictRecord], DictStorage):
     def __init__(self, name: str):
         self.data["name"] = name
         self.data["records"] = []
-        self._id = generate_short_hash(name)
-        self._star = False
+        self.data["id"] = generate_short_hash(name)
+        self.data["star"] = False
 
     @property
     def id(self) -> str:
-        return self._id
+        return self.data.get("id", generate_short_hash(self.data["name"]))
 
     @property
     def name(self) -> str:
@@ -67,11 +67,11 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
     @property
     def star(self) -> bool:
-        return self._star
+        return self.data.get("star", False)
 
     @star.setter
     def star(self, value: int) -> None:
-        self._star = bool(value)
+        self.data["star"] = bool(value)
 
     @property
     def records(self) -> list[DictRecord]:
@@ -100,7 +100,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return hash(self.id)
 
     def __str__(self):
-        return f"{self.name} (ID: {self.id})"
+        return f"<{self.name} (ID: {self.id})>"
 
     __repr__ = __str__
 
