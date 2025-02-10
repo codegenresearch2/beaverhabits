@@ -11,32 +11,38 @@ from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
 async def import_from_json(text: str) -> HabitList:
-    return DictHabitList(json.loads(text))
+    data = json.loads(text)
+    habit_list = DictHabitList(data)
+    if not habit_list.habits:
+        raise ValueError("No habits found in the imported data")
+    return habit_list
 
-async def merge_habits(user: User, other: HabitList):
-    current = await user_storage.get_user_habit_list(user)
-    if current is None:
-        await user_storage.save_user_habit_list(user, other)
-        logging.info(f"Imported {len(other.habits)} new habits")
+async def merge_habits(user: User, imported_habits: HabitList):
+    current_habits = await user_storage.get_user_habit_list(user)
+    if current_habits is None:
+        await user_storage.save_user_habit_list(user, imported_habits)
+        logging.info(f"Imported {len(imported_habits.habits)} new habits")
     else:
-        merged = await user_storage.merge_user_habit_list(user, other)
-        added = len(merged.habits) - len(current.habits)
-        merged_count = len(set(current.habits) & set(other.habits))
-        unchanged = len(current.habits) - merged_count
-        logging.info(f"Imported {added} new habits, merged {merged_count} habits, and {unchanged} habits were unchanged")
+        merged_habits = await user_storage.merge_user_habit_list(user, imported_habits)
+        added_habits = set(imported_habits.habits) - set(current_habits.habits)
+        merged_count = len(set(current_habits.habits) & set(imported_habits.habits))
+        unchanged_habits = set(current_habits.habits) - set(imported_habits.habits)
+        logging.info(f"Imported {len(added_habits)} new habits: {added_habits}")
+        logging.info(f"Merged {merged_count} habits")
+        logging.info(f"{len(unchanged_habits)} habits remained unchanged: {unchanged_habits}")
 
 def import_ui_page(user: User):
     async def handle_upload(e: events.UploadEventArguments):
         try:
-            other = await import_from_json(e.content.read().decode("utf-8"))
-            current = await user_storage.get_user_habit_list(user)
-            if current is None:
-                message = f"Are you sure? All your current habits will be replaced with {len(other.habits)} habits."
+            imported_habits = await import_from_json(e.content.read().decode("utf-8"))
+            current_habits = await user_storage.get_user_habit_list(user)
+            if current_habits is None:
+                message = f"Are you sure? All your current habits will be replaced with {len(imported_habits.habits)} habits."
             else:
-                added = len(other.habits) - len(current.habits)
-                merged = len(set(current.habits) & set(other.habits))
-                unchanged = len(current.habits) - merged
-                message = f"Are you sure? {added} new habits will be added, {merged} habits will be merged, and {unchanged} habits will remain unchanged."
+                added_habits = set(imported_habits.habits) - set(current_habits.habits)
+                merged_count = len(set(current_habits.habits) & set(imported_habits.habits))
+                unchanged_habits = set(current_habits.habits) - set(imported_habits.habits)
+                message = f"Are you sure? {len(added_habits)} new habits will be added, {merged_count} habits will be merged, and {len(unchanged_habits)} habits will remain unchanged."
 
             with ui.dialog() as dialog, ui.card().classes("w-64"):
                 ui.label(message)
@@ -47,8 +53,8 @@ def import_ui_page(user: User):
             if await dialog != "Yes":
                 return
 
-            await merge_habits(user, other)
-            ui.notify(f"Imported {len(other.habits)} habits", position="top", color="positive")
+            await merge_habits(user, imported_habits)
+            ui.notify(f"Imported {len(imported_habits.habits)} habits", position="top", color="positive")
         except json.JSONDecodeError:
             logging.exception("Import failed: Invalid JSON")
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
