@@ -122,9 +122,13 @@ class HabitDeleteButton(ui.button):
         self.props("flat fab-mini color=grey")
 
     async def _async_task(self):
-        await self.habit_list.remove(self.habit)
-        self.refresh()
-        logger.info(f"Deleted habit: {self.habit.name}")
+        try:
+            await self.habit_list.remove(self.habit)
+            logger.info(f"Deleted habit: {self.habit.name}")
+        except Exception as e:
+            logger.error(f"Failed to delete habit: {e}")
+        finally:
+            self.refresh()
 
 
 class HabitAddButton(ui.input):
@@ -137,11 +141,15 @@ class HabitAddButton(ui.input):
         self.props("flat fab-mini color=grey")
 
     async def _async_task(self):
-        logger.info(f"Adding new habit: {self.value}")
-        await self.habit_list.add(self.value)
-        self.refresh()
-        self.set_value("")
-        logger.info(f"Added new habit: {self.value}")
+        try:
+            logger.info(f"Adding new habit: {self.value}")
+            await self.habit_list.add(self.value)
+            logger.info(f"Added new habit: {self.value}")
+        except Exception as e:
+            logger.error(f"Failed to add new habit: {e}")
+        finally:
+            self.refresh()
+            self.set_value("")
 
 
 TODAY = "today"
