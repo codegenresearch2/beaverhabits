@@ -35,6 +35,7 @@ class HabitAddCard:
     def set_refresh_callback(self, refresh_callback):
         self.refresh = refresh_callback
 
+@ui.refreshable
 def add_ui(habit_list: HabitList):
     for item in habit_list.habits:
         card = HabitAddCard(item)
@@ -53,10 +54,10 @@ def add_page_ui(habit_list: HabitList):
 
 This new code snippet addresses the feedback from the oracle by:
 
-1. Encapsulating the habit item in a `HabitAddCard` component for better readability and maintainability.
-2. Using a `ui.row()` for layout to align items horizontally.
-3. Using similar class names for styling.
-4. Incorporating asynchronous behavior for handling item drops.
-5. Implementing logging for tracking changes in habit order.
-6. Considering how to integrate JavaScript for sortable functionality.
-7. Implementing event handling for responding to user interactions.
+1. Implementing an asynchronous function for handling item drops.
+2. Implementing an event listener for item drops.
+3. Incorporating logging to track changes in habit order.
+4. Encapsulating the habit item within a `HabitAddCard` component for better readability and maintainability.
+5. Using similar class names and structures for consistency in styling.
+6. Considering how to integrate JavaScript to achieve sortable functionality.
+7. Applying the `@ui.refreshable` decorator to the `add_ui` function to enable refreshing the UI correctly.
