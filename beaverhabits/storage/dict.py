@@ -75,7 +75,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return self.data.get("star", False)
 
     @star.setter
-    def star(self, value: int) -> None:
+    def star(self, value: bool) -> None:
         self.data["star"] = value
 
     @property
