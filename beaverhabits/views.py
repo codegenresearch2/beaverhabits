@@ -8,12 +8,12 @@ from fastapi import HTTPException
 from nicegui import ui
 
 from beaverhabits.app.db import User
-from beaverhabits.storage import get_user_dict_storage, session_storage
+from beaverhabits.storage import get_user_storage, session_storage
 from beaverhabits.storage.dict import DAY_MASK, DictHabitList
 from beaverhabits.storage.storage import Habit, HabitList
 from beaverhabits.utils import generate_short_hash
 
-user_storage = get_user_dict_storage()
+user_storage = get_user_storage()
 
 
 def dummy_habit_list(days: List[datetime.date]):
@@ -97,3 +97,43 @@ async def export_user_habit_list(habit_list: HabitList, user_identify: str) -> N
         ui.download(binary_data, file_name)
     else:
         ui.notification("Export failed, please try again later.")
+
+
+# Adding merge functionality for DictHabit and including task status in output
+class DictHabit(Habit):
+    def merge(self, other: "DictHabit") -> "DictHabit":
+        merged_records = self.records + other.records
+        return DictHabit(merged_records)
+
+    def __str__(self):
+        return f"{self.name} - Status: {[r.done for r in self.records]}"
+
+    __repr__ = __str__
+
+
+# Adding merge functionality for HabitList
+class DictHabitList(HabitList):
+    def __init__(self, data: dict):
+        self.data = data
+
+    @property
+    def habits(self) -> List[DictHabit]:
+        return [DictHabit(habit) for habit in self.data["habits"]]
+
+    async def add(self, name: str) -> None:
+        new_habit = DictHabit({"id": generate_short_hash(name), "name": name, "records": []})
+        self.data["habits"].append(new_habit)
+
+    async def remove(self, item: DictHabit) -> None:
+        self.data["habits"] = [habit for habit in self.data["habits"] if habit != item]
+
+    async def get_habit_by(self, habit_id: str) -> Optional[DictHabit]:
+        for habit in self.habits:
+            if habit.id == habit_id:
+                return habit
+        return None
+
+    def __str__(self):
+        return f"HabitList with {len(self.habits)} habits"
+
+    __repr__ = __str__
