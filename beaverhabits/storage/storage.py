@@ -1,4 +1,5 @@
-from typing import Generic, TypeVar
+from typing import Protocol, List, Optional, TypeVar
+import datetime
 
 # Define type variables for generics
 R = TypeVar('R', bound='CheckedRecord')
@@ -7,7 +8,8 @@ S = TypeVar('S', bound='SessionStorage')
 
 class CheckedRecord:
     @property
-    def day(self) -> datetime.date: ...
+    def day(self) -> datetime.date:
+        return datetime.date.today()  # Assuming today's date for demonstration
 
     @property
     def done(self) -> bool: ...
@@ -21,7 +23,7 @@ class CheckedRecord:
     __repr__ = __str__
 
 
-class Habit(Generic[R]):
+class Habit(Protocol[R]):
     @property
     def id(self) -> str: ...
 
@@ -52,7 +54,7 @@ class Habit(Generic[R]):
     __repr__ = __str__
 
 
-class HabitList(Generic[H]):
+class HabitList(Generic[H], Protocol):
     @property
     def habits(self) -> List[H]: ...
 
