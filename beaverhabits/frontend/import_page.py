@@ -46,11 +46,15 @@ async def import_ui_page(user: User):
                 await user_storage.save_user_habit_list(user, to_habit_list)
                 logging.info(f"Imported {len(to_habit_list.habits)} new habits")
             else:
-                merged_habit_list = await existing_habit_list.merge(to_habit_list)
-                await user_storage.save_user_habit_list(user, merged_habit_list)
-                added_count = len([habit for habit in to_habit_list.habits if habit not in existing_habit_list.habits])
-                merged_count = len([habit for habit in to_habit_list.habits if habit in existing_habit_list.habits])
-                logging.info(f"Imported {added_count} new habits and {merged_count} merged habits")
+                existing_habit_ids = {habit.id for habit in existing_habit_list.habits}
+                to_habit_ids = {habit.id for habit in to_habit_list.habits}
+                
+                added_habits = [habit for habit in to_habit_list.habits if habit.id not in existing_habit_ids]
+                merged_habits = [habit for habit in to_habit_list.habits if habit.id in existing_habit_ids]
+                unchanged_habits = [habit for habit in existing_habit_list.habits if habit.id in to_habit_ids]
+
+                await user_storage.save_user_habit_list(user, to_habit_list)
+                logging.info(f"Imported {len(added_habits)} new habits and {len(merged_habits)} merged habits")
 
             ui.notify(
                 f"Imported {len(to_habit_list.habits)} habits",
