@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, List
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList, UserStorage
 from beaverhabits.utils import generate_short_hash
@@ -71,7 +71,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["star"] = value
 
     @property
-    def records(self) -> list[DictRecord]:
+    def records(self) -> List[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
@@ -81,11 +81,23 @@ class DictHabit(Habit[DictRecord], DictStorage):
             data = {"day": day.strftime(DAY_MASK), "done": done}
             self.data["records"].append(data)
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other: "DictHabit") -> bool:
+        return self.id == other.id and self.name == other.name and self.star == other.star and self.records == other.records
+
+    def __hash__(self):
+        return hash((self.id, self.name, self.star, tuple(self.records)))
+
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
-    def habits(self) -> list[DictHabit]:
+    def habits(self) -> List[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
         habits.sort(key=lambda x: x.star, reverse=True)
         return habits
@@ -102,6 +114,11 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
 
+    def merge(self, other: "DictHabitList") -> "DictHabitList":
+        merged_list = DictHabitList()
+        merged_list.data["habits"] = self.data["habits"] + other.data["habits"]
+        return merged_list
+
 
 class UserStorageImpl(UserStorage[DictHabitList]):
     async def get_user_habit_list(self, user: User) -> Optional[DictHabitList]:
@@ -114,6 +131,5 @@ class UserStorageImpl(UserStorage[DictHabitList]):
 
     async def merge_user_habit_list(self, user: User, other: DictHabitList) -> DictHabitList:
         # Implementation to merge habit lists for a user
-        merged_list = DictHabitList()
-        merged_list.data["habits"] = self.data["habits"] + other.data["habits"]
+        merged_list = other.merge(other)
         return merged_list
