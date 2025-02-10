@@ -15,7 +15,7 @@ from beaverhabits.utils import generate_short_hash
 
 user_storage = get_user_dict_storage()
 
-def dummy_habit_list(days: List[datetime.date]):
+def dummy_habit_list(days: List[datetime.date]) -> HabitList:
     pick = lambda: random.randint(0, 3) == 0
     items = [
         {
@@ -65,9 +65,7 @@ async def get_user_habit(user: User, habit_id: str) -> Habit:
 
     return habit
 
-async def get_or_create_user_habit_list(
-    user: User, days: List[datetime.date]
-) -> HabitList:
+async def get_or_create_user_habit_list(user: User, days: List[datetime.date]) -> HabitList:
     habit_list = await get_user_habit_list(user)
     if habit_list is not None:
         return habit_list
@@ -88,4 +86,4 @@ async def export_user_habit_list(habit_list: HabitList, user_identify: str) -> N
         file_name = f"habits_{int(float(time.time()))}.json"
         ui.download(binary_data, file_name)
     else:
-        ui.notification("Export failed, please try again later.")
+        ui.notification("Export failed. Please try again later.")
