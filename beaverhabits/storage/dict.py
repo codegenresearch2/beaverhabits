@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import List, Optional
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
@@ -52,10 +52,6 @@ class DictHabit(Habit[DictRecord], DictStorage):
         if "id" not in self.data:
             self.data["id"] = generate_short_hash(self.name)
         return self.data["id"]
-
-    @id.setter
-    def id(self, value: str) -> None:
-        self.data["id"] = value
 
     @property
     def name(self) -> str:
@@ -113,10 +109,13 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
 
-    async def merge(self, other: 'DictHabitList') -> None:
+    async def merge(self, other: 'DictHabitList') -> 'DictHabitList':
+        new_list = DictHabitList()
+        new_list.data = self.data.copy()
         for habit in other.habits:
             existing_habit = await self.get_habit_by(habit.id)
             if existing_habit:
                 existing_habit.records.extend(habit.records)
             else:
-                self.data["habits"].append(habit.data)
+                new_list.data["habits"].append(habit.data)
+        return new_list
