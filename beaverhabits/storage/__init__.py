@@ -10,11 +10,7 @@ user_database_storage = UserDatabaseStorage()
 sqlite_storage = None
 
 
-def get_sessions_storage() -> SessionStorage:
-    return session_storage
-
-
-def get_user_storage() -> UserStorage:
+def get_user_dict_storage() -> UserStorage:
     if settings.HABITS_STORAGE == StorageType.USER_DISK:
         return user_disk_storage
     elif settings.HABITS_STORAGE == StorageType.USER_DATABASE:
