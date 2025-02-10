@@ -46,8 +46,10 @@ def add_ui(habit_list: HabitList):
                     name.classes("col-span-9")
                     name.props("borderless")
 
+                    ui.space().classes("col-span-1")
+
                     delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
-                    delete.classes("col-span-3")
+                    delete.classes("col-span-2")
 
 def order_page_ui(habit_list: HabitList):
     with layout():
