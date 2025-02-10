@@ -20,10 +20,10 @@ def import_from_json(text: str) -> HabitList:
         return habit_list
     except json.JSONDecodeError:
         logging.exception("Invalid JSON")
-        raise
+        raise ValueError("Invalid JSON")
     except Exception as e:
         logging.exception(f"Error importing habits: {e}")
-        raise
+        raise ValueError(f"Error importing habits: {e}")
 
 async def import_ui_page(user: User):
     with ui.dialog() as dialog, ui.card().classes("w-64"):
@@ -44,24 +44,23 @@ async def import_ui_page(user: User):
 
             if existing_habit_list is None:
                 await user_storage.save_user_habit_list(user, to_habit_list)
-                logging.info(f"Imported {len(to_habit_list.habits)} habits")
+                logging.info(f"Imported {len(to_habit_list.habits)} new habits")
             else:
                 merged_habit_list = await existing_habit_list.merge(to_habit_list)
                 await user_storage.save_user_habit_list(user, merged_habit_list)
                 added_count = len([habit for habit in to_habit_list.habits if habit not in existing_habit_list.habits])
                 merged_count = len([habit for habit in to_habit_list.habits if habit in existing_habit_list.habits])
-                logging.info(f"Imported {added_count} added and {merged_count} merged habits")
+                logging.info(f"Imported {added_count} new habits and {merged_count} merged habits")
 
             ui.notify(
                 f"Imported {len(to_habit_list.habits)} habits",
                 position="top",
                 color="positive",
             )
-        except json.JSONDecodeError:
-            ui.notify("Import failed: Invalid JSON", color="negative", position="top")
-            logging.exception("Invalid JSON")
-        except Exception as e:
+        except ValueError as e:
             ui.notify(str(e), color="negative", position="top")
+        except Exception as e:
+            ui.notify("An error occurred. Please try again later.", color="negative", position="top")
             logging.exception(f"Error importing habits: {e}")
 
     menu_header("Import", target=get_root_path())
