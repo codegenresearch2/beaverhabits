@@ -1,5 +1,6 @@
 import datetime
 from typing import List, Optional, Protocol
+from enum import Enum
 
 from beaverhabits.app.db import User
 
@@ -51,15 +52,10 @@ class Habit[R: CheckedRecord](Protocol):
     def ticked_days(self) -> list[datetime.date]:
         return [r.day for r in self.records if r.done]
 
-    async def tick(self, day: datetime.date, done: bool) -> None:
-        if record := next((r for r in self.records if r.day == day), None):
-            record.done = done
-        else:
-            new_record = R(day=day, done=done)
-            self.records.append(new_record)
+    async def tick(self, day: datetime.date, done: bool) -> None: ...
 
     def __str__(self):
-        return f"{self.name} - {self.status.value}"
+        return self.name
 
     __repr__ = __str__
 
@@ -103,6 +99,3 @@ class UserStorage[L: HabitList](Protocol):
         merged_list = await current_list.merge(other)
         await self.save_user_habit_list(user, merged_list)
         return merged_list
-
-
-In the rewritten code, I have added an `Enum` for `HabitStatus` to manage habit status with an initialized title for clarity. I have also added an `edit` functionality for habits by adding a setter for the `name` property. I have modified the `tick` method to create a new record if it doesn't exist instead of modifying the state. I have also added a `merge` method to the `HabitList` protocol for merging habit lists. The `merge_user_habit_list` method in the `UserStorage` protocol now uses this `merge` method to merge the current habit list with another one.
