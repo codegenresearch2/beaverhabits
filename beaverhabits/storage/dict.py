@@ -78,11 +78,11 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return [DictRecord(d) for d in self.data["records"]]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
-        for record in self.records:
-            if record.day == day:
-                record.done = done
-                return
-        self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
+        record = next((r for r in self.records if r.day == day), None)
+        if record:
+            record.done = done
+        else:
+            self.data["records"].append({"day": day.strftime(DAY_MASK), "done": done})
 
     async def merge(self, other: "DictHabit") -> "DictHabit":
         self_ticks = {r.day for r in self.records if r.done}
@@ -100,7 +100,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return hash(self.id)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} (ID: {self.id})"
 
     __repr__ = __str__
 
@@ -112,9 +112,15 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     @property
     def habits(self) -> list[DictHabit]:
-        habits = [DictHabit(d) for d in self.data["habits"]]
-        habits.sort(key=lambda x: x.star, reverse=True)
-        return habits
+        return [DictHabit(d) for d in self.data["habits"]]
+
+    @property
+    def order(self) -> list[str]:
+        return [habit.id for habit in self.habits]
+
+    @order.setter
+    def order(self, value: list[str]) -> None:
+        self.data["habits"] = [habit.data for habit in sorted(self.habits, key=lambda h: value.index(h.id))]
 
     async def get_habit_by(self, habit_id: str) -> Optional[DictHabit]:
         for habit in self.habits:
