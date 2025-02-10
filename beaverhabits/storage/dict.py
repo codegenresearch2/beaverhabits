@@ -50,20 +50,28 @@ class DictHabit(Habit[DictRecord], DictStorage):
     def __init__(self, name: str):
         self.data["name"] = name
         self.data["records"] = []
-        self.data["id"] = generate_short_hash(name)
-        self.data["star"] = False
+        self._id = generate_short_hash(name)
+        self._star = False
 
     @property
     def id(self) -> str:
-        return self.data["id"]
+        return self._id
 
     @property
     def name(self) -> str:
         return self.data["name"]
 
+    @name.setter
+    def name(self, value: str) -> None:
+        self.data["name"] = value
+
     @property
     def star(self) -> bool:
-        return self.data.get("star", False)
+        return self._star
+
+    @star.setter
+    def star(self, value: int) -> None:
+        self._star = bool(value)
 
     @property
     def records(self) -> list[DictRecord]:
@@ -91,6 +99,11 @@ class DictHabit(Habit[DictRecord], DictStorage):
     def __hash__(self) -> int:
         return hash(self.id)
 
+    def __str__(self):
+        return self.name
+
+    __repr__ = __str__
+
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
@@ -99,7 +112,9 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     @property
     def habits(self) -> list[DictHabit]:
-        return [DictHabit(d) for d in self.data["habits"]]
+        habits = [DictHabit(d) for d in self.data["habits"]]
+        habits.sort(key=lambda x: x.star, reverse=True)
+        return habits
 
     async def get_habit_by(self, habit_id: str) -> Optional[DictHabit]:
         for habit in self.habits:
