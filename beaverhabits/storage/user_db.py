@@ -47,5 +47,4 @@ class UserDatabaseStorage(UserStorage[DictHabitList]):
         if current is None:
             return other
 
-        merged_list = await current.merge(other)
-        return merged_list
+        return await current.merge(other)
