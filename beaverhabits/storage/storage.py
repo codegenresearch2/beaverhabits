@@ -4,9 +4,9 @@ from enum import Enum
 from beaverhabits.app.db import User
 
 class HabitStatus(Enum):
-    NORMAL = "normal"
-    ARCHIVE = "archive"
-    SOFT_DELETE = "soft_delete"
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+    SOFT_DELETED = "soft_deleted"
 
 class CheckedRecord(Protocol):
     @property
@@ -34,10 +34,10 @@ class Habit[R: CheckedRecord](Protocol):
     def name(self, value: str) -> None: ...
 
     @property
-    def star(self) -> int: ...
+    def star(self) -> bool: ...
 
     @star.setter
-    def star(self, value: int) -> None: ...
+    def star(self, value: bool) -> None: ...
 
     @property
     def records(self) -> List[R]: ...
