@@ -2,7 +2,6 @@ import datetime
 import json
 import random
 import time
-import logging
 from typing import List
 
 from fastapi import HTTPException
@@ -16,7 +15,7 @@ from beaverhabits.utils import generate_short_hash
 
 user_storage = get_user_storage()
 
-async def dummy_habit_list(days: List[datetime.date]):
+def dummy_habit_list(days: List[datetime.date]):
     pick = lambda: random.randint(0, 3) == 0
     items = [
         {
@@ -30,15 +29,11 @@ async def dummy_habit_list(days: List[datetime.date]):
     ]
     return DictHabitList({"habits": items})
 
-async def get_session_habit_list() -> HabitList | None:
-    try:
-        return await session_storage.get_user_habit_list()
-    except Exception as e:
-        logging.error(f"Error getting session habit list: {e}")
-        return None
+def get_session_habit_list() -> HabitList | None:
+    return session_storage.get_user_habit_list()
 
 async def get_session_habit(habit_id: str) -> Habit:
-    habit_list = await get_session_habit_list()
+    habit_list = get_session_habit_list()
     if habit_list is None:
         raise HTTPException(status_code=404, detail="Habit list not found")
 
@@ -48,21 +43,16 @@ async def get_session_habit(habit_id: str) -> Habit:
 
     return habit
 
-async def get_or_create_session_habit_list(days: List[datetime.date]) -> HabitList:
-    habit_list = await get_session_habit_list()
-    if habit_list is not None:
+def get_or_create_session_habit_list(days: List[datetime.date]) -> HabitList:
+    if (habit_list := get_session_habit_list()) is not None:
         return habit_list
 
-    habit_list = await dummy_habit_list(days)
-    await session_storage.save_user_habit_list(habit_list)
+    habit_list = dummy_habit_list(days)
+    session_storage.save_user_habit_list(habit_list)
     return habit_list
 
 async def get_user_habit_list(user: User) -> HabitList | None:
-    try:
-        return await user_storage.get_user_habit_list(user)
-    except Exception as e:
-        logging.error(f"Error getting user habit list: {e}")
-        return None
+    return await user_storage.get_user_habit_list(user)
 
 async def get_user_habit(user: User, habit_id: str) -> Habit:
     habit_list = await get_user_habit_list(user)
@@ -76,29 +66,24 @@ async def get_user_habit(user: User, habit_id: str) -> Habit:
     return habit
 
 async def get_or_create_user_habit_list(user: User, days: List[datetime.date]) -> HabitList:
-    habit_list = await get_user_habit_list(user)
-    if habit_list is not None:
+    if (habit_list := await get_user_habit_list(user)) is not None:
         return habit_list
 
-    habit_list = await dummy_habit_list(days)
+    habit_list = dummy_habit_list(days)
     await user_storage.save_user_habit_list(user, habit_list)
     return habit_list
 
 async def export_user_habit_list(habit_list: HabitList, user_identify: str) -> None:
-    try:
-        if isinstance(habit_list, DictHabitList):
-            data = {
-                "user_email": user_identify,
-                "exported_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                **habit_list.data,
-            }
-            binary_data = json.dumps(data).encode()
-            file_name = f"habits_{int(float(time.time()))}.json"
-            ui.download(binary_data, file_name)
-        else:
-            merged_habit_list = await user_storage.merge_user_habit_list(user, habit_list)
-            await user_storage.save_user_habit_list(user, merged_habit_list)
-            ui.notification("Habit list merged and saved successfully.")
-    except Exception as e:
-        logging.error(f"Error exporting user habit list: {e}")
-        ui.notification("Export failed, please try again later.")
+    if isinstance(habit_list, DictHabitList):
+        data = {
+            "user_email": user_identify,
+            "exported_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            **habit_list.data,
+        }
+        binary_data = json.dumps(data).encode()
+        file_name = f"habits_{int(float(time.time()))}.json"
+        ui.download(binary_data, file_name)
+    else:
+        merged_habit_list = await user_storage.merge_user_habit_list(user, habit_list)
+        await user_storage.save_user_habit_list(user, merged_habit_list)
+        ui.notification("Habit list merged and saved successfully.")
