@@ -27,10 +27,11 @@ def import_ui_page(user: User):
             if current is None:
                 current = DictHabitList({"habits": []})
 
-            added = set(other.habits) - set(current.habits)
-            merged = set(other.habits) & set(current.habits)
+            added = [habit for habit in other.habits if habit not in current.habits]
+            merged = [habit for habit in other.habits if habit in current.habits]
+            unchanged = [habit for habit in current.habits if habit not in other.habits]
 
-            logging.info(f"Added: {len(added)}, Merged: {len(merged)}")
+            logging.info(f"Added: {len(added)}, Merged: {len(merged)}, Unchanged: {len(unchanged)}")
 
             with ui.dialog() as dialog, ui.card().classes("w-64"):
                 ui.label(f"Are you sure? {len(added)} habits will be added and {len(merged)} habits will be merged.")
