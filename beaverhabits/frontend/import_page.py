@@ -17,32 +17,30 @@ async def import_from_json(text: str) -> HabitList:
         raise ValueError("No habits found in the imported data")
     return habit_list
 
-async def merge_habits(user: User, imported_habits: HabitList):
-    current_habits = await user_storage.get_user_habit_list(user)
-    if current_habits is None:
-        await user_storage.save_user_habit_list(user, imported_habits)
-        logging.info(f"Imported {len(imported_habits.habits)} new habits")
+async def merge_habits(user: User, other: HabitList):
+    current = await user_storage.get_user_habit_list(user)
+    if current is None:
+        await user_storage.save_user_habit_list(user, other)
+        logging.info(f"Imported {len(other.habits)} new habits")
     else:
-        merged_habits = await user_storage.merge_user_habit_list(user, imported_habits)
-        added_habits = set(imported_habits.habits) - set(current_habits.habits)
-        merged_count = len(set(current_habits.habits) & set(imported_habits.habits))
-        unchanged_habits = set(current_habits.habits) - set(imported_habits.habits)
-        logging.info(f"Imported {len(added_habits)} new habits: {added_habits}")
-        logging.info(f"Merged {merged_count} habits")
-        logging.info(f"{len(unchanged_habits)} habits remained unchanged: {unchanged_habits}")
+        merged = await user_storage.merge_user_habit_list(user, other)
+        added = set(other.habits) - set(current.habits)
+        merged_count = len(set(current.habits) & set(other.habits))
+        unchanged = set(current.habits) - set(other.habits)
+        logging.info(f"Imported {len(added)} new habits, merged {merged_count} habits, and {len(unchanged)} habits remained unchanged")
 
 def import_ui_page(user: User):
     async def handle_upload(e: events.UploadEventArguments):
         try:
-            imported_habits = await import_from_json(e.content.read().decode("utf-8"))
-            current_habits = await user_storage.get_user_habit_list(user)
-            if current_habits is None:
-                message = f"Are you sure? All your current habits will be replaced with {len(imported_habits.habits)} habits."
+            other = await import_from_json(e.content.read().decode("utf-8"))
+            current = await user_storage.get_user_habit_list(user)
+            if current is None:
+                message = f"Are you sure? All your current habits will be replaced with {len(other.habits)} habits."
             else:
-                added_habits = set(imported_habits.habits) - set(current_habits.habits)
-                merged_count = len(set(current_habits.habits) & set(imported_habits.habits))
-                unchanged_habits = set(current_habits.habits) - set(imported_habits.habits)
-                message = f"Are you sure? {len(added_habits)} new habits will be added, {merged_count} habits will be merged, and {len(unchanged_habits)} habits will remain unchanged."
+                added = set(other.habits) - set(current.habits)
+                merged_count = len(set(current.habits) & set(other.habits))
+                unchanged = set(current.habits) - set(other.habits)
+                message = f"Are you sure? {len(added)} new habits will be added, {merged_count} habits will be merged, and {len(unchanged)} habits will remain unchanged."
 
             with ui.dialog() as dialog, ui.card().classes("w-64"):
                 ui.label(message)
@@ -53,8 +51,8 @@ def import_ui_page(user: User):
             if await dialog != "Yes":
                 return
 
-            await merge_habits(user, imported_habits)
-            ui.notify(f"Imported {len(imported_habits.habits)} habits", position="top", color="positive")
+            await merge_habits(user, other)
+            ui.notify(f"Imported {len(other.habits)} habits", position="top", color="positive")
         except json.JSONDecodeError:
             logging.exception("Import failed: Invalid JSON")
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
@@ -64,3 +62,4 @@ def import_ui_page(user: User):
 
     menu_header("Import", target=get_root_path())
     ui.upload(on_upload=handle_upload, max_files=1).props("accept=.json")
+    return
