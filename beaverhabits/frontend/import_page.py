@@ -34,9 +34,8 @@ def import_ui_page(user: User):
         try:
             other = await import_from_json(e.content.read().decode("utf-8"))
             current = await user_storage.get_user_habit_list(user)
-            if current is None:
-                message = f"Are you sure? All your current habits will be replaced with {len(other.habits)} habits."
-            else:
+            message = f"Are you sure? This will replace your current habits with {len(other.habits)} habits."
+            if current is not None:
                 added = set(other.habits) - set(current.habits)
                 merged_count = len(set(current.habits) & set(other.habits))
                 unchanged = set(current.habits) - set(other.habits)
@@ -57,7 +56,7 @@ def import_ui_page(user: User):
             logging.exception("Import failed: Invalid JSON")
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
         except Exception as error:
-            logging.exception(f"Import failed: {str(error)}")
+            logging.exception(f"Import failed: {error}")
             ui.notify(str(error), color="negative", position="top")
 
     menu_header("Import", target=get_root_path())
