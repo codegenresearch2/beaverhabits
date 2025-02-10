@@ -22,8 +22,7 @@ class CheckedRecord(Protocol):
     def __str__(self):
         return f"{self.day} {'[x]' if self.done else '[ ]'}"
 
-    def __repr__(self):
-        return f"CheckedRecord(day={self.day}, done={self.done})"
+    __repr__ = __str__
 
 class Habit[R: CheckedRecord](Protocol):
     @property
@@ -36,10 +35,10 @@ class Habit[R: CheckedRecord](Protocol):
     def name(self, value: str) -> None: ...
 
     @property
-    def star(self) -> int: ...
+    def star(self) -> bool: ...
 
     @star.setter
-    def star(self, value: int) -> None: ...
+    def star(self, value: bool) -> None: ...
 
     @property
     def status(self) -> HabitStatus: ...
