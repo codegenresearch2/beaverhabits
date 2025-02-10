@@ -12,29 +12,28 @@ async def import_from_json(text: str) -> HabitList:
     data = json.loads(text)
     habit_list = DictHabitList(data)
     if not habit_list.habits:
-        raise ValueError("No habits found")
+        raise ValueError("No habits found in the imported data")
     return habit_list
 
 def import_ui_page(user: User):
-    logging.info("Import UI page accessed")
+    logging.info("Accessed import UI page")
 
     async def handle_upload(e: events.UploadEventArguments):
         try:
             text = e.content.read().decode("utf-8")
-            other = await import_from_json(text)
-            current = await user_storage.get_user_habit_list(user)
+            from_habit_list = await import_from_json(text)
+            current_habit_list = await user_storage.get_user_habit_list(user)
 
-            if current is None:
-                current = DictHabitList({"habits": []})
+            if current_habit_list is None:
+                current_habit_list = DictHabitList({"habits": []})
 
-            added = set(other.habits) - set(current.habits)
-            merged = set(other.habits) & set(current.habits)
-            unchanged = set(current.habits) - set(other.habits)
+            habits_to_add = set(from_habit_list.habits) - set(current_habit_list.habits)
+            habits_to_merge = set(from_habit_list.habits) & set(current_habit_list.habits)
 
-            logging.info(f"Added: {len(added)}, Merged: {len(merged)}, Unchanged: {len(unchanged)}")
+            logging.info(f"Habits to add: {len(habits_to_add)}, Habits to merge: {len(habits_to_merge)}")
 
             with ui.dialog() as dialog, ui.card().classes("w-64"):
-                ui.label(f"Are you sure? {len(added)} habits will be added and {len(merged)} habits will be merged.")
+                ui.label(f"Are you sure? {len(habits_to_add)} habits will be added and {len(habits_to_merge)} habits will be merged.")
                 with ui.row():
                     ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
                     ui.button("No", on_click=lambda: dialog.submit("No"))
@@ -43,11 +42,11 @@ def import_ui_page(user: User):
             if result != "Yes":
                 return
 
-            merged_habit_list = await user_storage.merge_user_habit_list(user, other)
+            merged_habit_list = await user_storage.merge_user_habit_list(user, from_habit_list)
             await user_storage.save_user_habit_list(user, merged_habit_list)
 
             ui.notify(
-                f"Imported and merged {len(added) + len(merged)} habits",
+                f"Imported and merged {len(habits_to_add) + len(habits_to_merge)} habits",
                 position="top",
                 color="positive",
             )
@@ -56,7 +55,7 @@ def import_ui_page(user: User):
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
         except Exception as error:
             logging.exception("Import failed")
-            ui.notify("Import failed. Please try again later.", color="negative", position="top")
+            ui.notify(f"Import failed: {str(error)}", color="negative", position="top")
 
     menu_header("Import", target=get_root_path())
 
