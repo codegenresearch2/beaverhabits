@@ -27,17 +27,17 @@ def import_ui_page(user: User):
     async def handle_upload(e: events.UploadEventArguments):
         try:
             text = e.content.read().decode("utf-8")
-            other = await import_from_json(text)
-            current = await get_current_habit_list()
+            from_habit_list = await import_from_json(text)
+            to_habit_list = await get_current_habit_list()
 
-            added = set(other.habits) - set(current.habits)
-            merged = set(other.habits) & set(current.habits)
-            unchanged = set(current.habits) - set(other.habits)
+            habits_to_add = set(from_habit_list.habits) - set(to_habit_list.habits)
+            habits_to_merge = set(from_habit_list.habits) & set(to_habit_list.habits)
+            unchanged_habits = set(to_habit_list.habits) - set(from_habit_list.habits)
 
-            logging.info(f"Added: {len(added)}, Merged: {len(merged)}, Unchanged: {len(unchanged)}")
+            logging.info(f"Habits to add: {len(habits_to_add)}, Habits to merge: {len(habits_to_merge)}, Unchanged habits: {len(unchanged_habits)}")
 
             with ui.dialog() as dialog, ui.card().classes("w-64"):
-                ui.label(f"Are you sure? {len(added)} habits will be added and {len(merged)} habits will be merged.")
+                ui.label(f"Are you sure? {len(habits_to_add)} habits will be added and {len(habits_to_merge)} habits will be merged.")
                 with ui.row():
                     ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
                     ui.button("No", on_click=lambda: dialog.submit("No"))
@@ -46,15 +46,15 @@ def import_ui_page(user: User):
             if result != "Yes":
                 return
 
-            merged_habit_list = await user_storage.merge_user_habit_list(user, other)
+            merged_habit_list = await user_storage.merge_user_habit_list(user, from_habit_list)
             await user_storage.save_user_habit_list(user, merged_habit_list)
 
             ui.notify(
-                f"Imported and merged {len(added) + len(merged)} habits",
+                f"Imported and merged {len(habits_to_add) + len(habits_to_merge)} habits",
                 position="top",
                 color="positive",
             )
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             logging.exception("Import failed: Invalid JSON")
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
         except Exception as error:
