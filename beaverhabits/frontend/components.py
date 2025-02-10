@@ -15,13 +15,9 @@ from beaverhabits.utils import WEEK_DAYS
 
 strptime = datetime.datetime.strptime
 
-# Define menu_header function to address the test case feedback
-def menu_header(title: str, target: str):
-    link = ui.link(title, target=target)
-    link.classes(
-        "text-semibold text-2xl dark:text-white no-underline hover:no-underline"
-    )
-    return link
+# Define compat_menu function to address the test case feedback
+def compat_menu(name: str, callback: Callable):
+    return ui.menu_item(name, callback).props("dense").classes("items-center")
 
 # Define HabitAddButton class to address the test case feedback
 class HabitAddButton(ui.input):
