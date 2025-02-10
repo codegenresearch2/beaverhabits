@@ -44,3 +44,4 @@ def add_page_ui(habit_list: HabitList):
     with layout():
         with ui.column().classes("w-full pl-1 items-center"):
             habit_add_card = HabitAddCard(habit_list, habit_add_card.refresh)
+            habit_add_card.refresh_func = habit_add_card.refresh
