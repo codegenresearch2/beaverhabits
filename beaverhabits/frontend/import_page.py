@@ -27,14 +27,17 @@ def import_ui_page(user: User):
     async def handle_upload(e: events.UploadEventArguments):
         try:
             text = e.content.read().decode("utf-8")
-            imported_habit_list = await import_from_json(text)
-            current_habit_list = await get_current_habit_list()
+            other = await import_from_json(text)
+            current = await get_current_habit_list()
 
-            to_add = len(imported_habit_list.habits)
-            to_merge = len(set(current_habit_list.habits) & set(imported_habit_list.habits))
+            to_add = set(other.habits) - set(current.habits)
+            to_merge = set(other.habits) & set(current.habits)
+            unchanged = set(current.habits) - set(other.habits)
+
+            logging.info(f"To add: {len(to_add)}, to merge: {len(to_merge)}, unchanged: {len(unchanged)}")
 
             with ui.dialog() as dialog, ui.card().classes("w-64"):
-                ui.label(f"Are you sure? {to_add} habits will be added and {to_merge} habits will be merged.")
+                ui.label(f"Are you sure? {len(to_add)} habits will be added and {len(to_merge)} habits will be merged.")
                 with ui.row():
                     ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
                     ui.button("No", on_click=lambda: dialog.submit("No"))
@@ -43,16 +46,16 @@ def import_ui_page(user: User):
             if result != "Yes":
                 return
 
-            merged_habit_list = await user_storage.merge_user_habit_list(user, imported_habit_list)
+            merged_habit_list = await user_storage.merge_user_habit_list(user, other)
             await user_storage.save_user_habit_list(user, merged_habit_list)
 
             ui.notify(
-                f"Imported and merged {to_add} habits",
+                f"Imported and merged {len(to_add) + len(to_merge)} habits",
                 position="top",
                 color="positive",
             )
-        except json.JSONDecodeError:
-            logging.error("Import failed: Invalid JSON")
+        except json.JSONDecodeError as e:
+            logging.error(f"Import failed: Invalid JSON - {str(e)}")
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
         except Exception as error:
             logging.error(f"Import failed: {str(error)}")
