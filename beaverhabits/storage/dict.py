@@ -75,7 +75,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return self.data.get("star", False)
 
     @star.setter
-    def star(self, value: int) -> None:
+    def star(self, value: bool) -> None:
         self.data["star"] = value
 
     @property
@@ -84,7 +84,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
     @property
     def status(self) -> HabitStatus:
-        return HabitStatus(self.data.get("status", "normal"))
+        return HabitStatus(self.data.get("status", HabitStatus.ACTIVE.value))
 
     @status.setter
     def status(self, value: HabitStatus) -> None:
@@ -147,7 +147,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                 return habit
 
     async def add(self, name: str) -> None:
-        d = {"name": name, "records": [], "id": generate_short_hash(name), "status": "normal"}
+        d = {"name": name, "records": [], "id": generate_short_hash(name), "status": HabitStatus.ACTIVE.value}
         self.data["habits"].append(d)
 
     async def remove(self, item: DictHabit) -> None:
