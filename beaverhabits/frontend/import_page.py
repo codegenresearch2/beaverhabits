@@ -11,7 +11,7 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-def import_from_json(text: str) -> HabitList:
+async def import_from_json(text: str) -> HabitList:
     try:
         d = json.loads(text)
         habit_list = DictHabitList(d)
@@ -20,6 +20,9 @@ def import_from_json(text: str) -> HabitList:
         return habit_list
     except json.JSONDecodeError:
         logging.error("Import failed: Invalid JSON")
+        raise
+    except ValueError as e:
+        logging.error(f"Import failed: {e}")
         raise
     except Exception as e:
         logging.error(f"An error occurred: {e}")
@@ -43,10 +46,9 @@ async def import_ui_page(user: User):
             existing_habit_list = await user_storage_module.get_user_habit_list(user)
 
             if existing_habit_list:
-                # Merge the new habits with the existing ones
-                merged_habit_list = existing_habit_list.merge(to_habit_list)
-                await user_storage_module.save_user_habit_list(user, merged_habit_list)
-                logging.info(f"Merged {len(to_habit_list.habits)} habits with existing habits.")
+                added, merged, unchanged = existing_habit_list.merge_and_categorize(to_habit_list)
+                await user_storage_module.save_user_habit_list(user, merged)
+                logging.info(f"Imported {len(to_habit_list.habits)} habits, added {len(added)}, merged {len(merged)}, unchanged {len(unchanged)}.")
             else:
                 await user_storage_module.save_user_habit_list(user, to_habit_list)
                 logging.info(f"Imported {len(to_habit_list.habits)} new habits.")
