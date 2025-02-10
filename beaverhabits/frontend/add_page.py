@@ -50,4 +50,6 @@ def add_page_ui(habit_list: HabitList):
         with ui.column().classes("w-full pl-1 items-center"):
             habit_add_card = HabitAddCard(habit_list)
 
+# Initialize habit_list before calling add_page_ui
+habit_list = HabitList()
 add_page_ui(habit_list)
