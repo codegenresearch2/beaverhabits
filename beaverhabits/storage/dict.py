@@ -2,35 +2,19 @@ from dataclasses import dataclass, field
 import datetime
 from typing import List, Optional
 
-from beaverhabits.storage.storage import CheckedRecord, HabitStatus, Habit, HabitList
+from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
+from beaverhabits.logging import logger
 
 DAY_MASK = "%Y-%m-%d"
 MONTH_MASK = "%Y/%m"
-
 
 @dataclass(init=False)
 class DictStorage:
     data: dict = field(default_factory=dict, metadata={"exclude": True})
 
-
 @dataclass
 class DictRecord(CheckedRecord, DictStorage):
-    """
-    # Read (d1~d3)
-    persistent    ->     memory      ->     view
-    d0: [x]              d0: [x]
-                                            d1: [ ]
-    d2: [x]              d2: [x]            d2: [x]
-                                            d3: [ ]
-
-    # Update:
-    view(update)  ->     memory      ->     persistent
-    d1: [ ]
-    d2: [ ]              d2: [ ]            d2: [x]
-    d3: [x]              d3: [x]            d3: [ ]
-    """
-
     @property
     def day(self) -> datetime.date:
         date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
@@ -42,8 +26,8 @@ class DictRecord(CheckedRecord, DictStorage):
 
     @done.setter
     def done(self, value: bool) -> None:
+        logger.info(f"Updating record for {self.day} to {value}")
         self.data["done"] = value
-
 
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
@@ -74,14 +58,6 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["star"] = value
 
     @property
-    def status(self) -> HabitStatus:
-        return HabitStatus(self.data.get("status", HabitStatus.ACTIVE))
-
-    @status.setter
-    def status(self, value: HabitStatus) -> None:
-        self.data["status"] = value
-
-    @property
     def records(self) -> list[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
@@ -91,6 +67,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         else:
             data = {"day": day.strftime(DAY_MASK), "done": done}
             self.data["records"].append(data)
+        logger.info(f"Ticked habit {self.name} for {day} with status {done}")
 
     async def merge(self, other: "DictHabit") -> "DictHabit":
         self_ticks = {r.day for r in self.records if r.done}
@@ -103,6 +80,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
                 {"day": day.strftime(DAY_MASK), "done": True} for day in result
             ],
         }
+        logger.info(f"Merged habit {self.name}")
         return DictHabit(d)
 
     def __eq__(self, other: object) -> bool:
@@ -116,24 +94,21 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
     __repr__ = __str__
 
-
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
     def habits(self) -> list[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
-        status = {HabitStatus.ACTIVE: 0, HabitStatus.ARCHIVED: 1}
-
-        # Filter out valid habits
-        habits = [x for x in habits if x.status in status]
 
         # Sort by order
-        if o := self.order:
+        if self.order:
             habits.sort(
-                key=lambda x: (o.index(str(x.id)) if str(x.id) in o else float("inf"))
+                key=lambda x: (
+                    self.order.index(str(x.id))
+                    if str(x.id) in self.order
+                    else float("inf")
+                )
             )
-        # Sort by status
-        habits.sort(key=lambda x: status.get(x.status, float("inf")))
 
         return habits
 
@@ -153,9 +128,11 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
     async def add(self, name: str) -> None:
         d = {"name": name, "records": [], "id": generate_short_hash(name)}
         self.data["habits"].append(d)
+        logger.info(f"Added habit {name}")
 
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
+        logger.info(f"Removed habit {item.name}")
 
     async def merge(self, other: "DictHabitList") -> "DictHabitList":
         result = set(self.habits).symmetric_difference(set(other.habits))
@@ -167,4 +144,5 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                     new_habit = await self_habit.merge(other_habit)
                     result.add(new_habit)
 
+        logger.info("Merged habit lists")
         return DictHabitList({"habits": [h.data for h in result]})
