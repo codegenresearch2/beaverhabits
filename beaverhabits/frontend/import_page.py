@@ -18,19 +18,19 @@ async def import_from_json(text: str) -> HabitList:
         raise ValueError("No habits found")
     return habit_list
 
-async def import_ui_page(user: User):
+def import_ui_page(user: User):
     async def handle_upload(e: events.UploadEventArguments):
         try:
             text = e.content.read().decode("utf-8")
             to_habit_list = await import_from_json(text)
-            existing_habit_list = await user_storage_module.get_user_habit_list(user)
+            from_habit_list = user_storage_module.get_user_habit_list(user)
 
-            if existing_habit_list:
-                added, merged, unchanged = existing_habit_list.merge_and_categorize(to_habit_list)
-                await user_storage_module.save_user_habit_list(user, merged)
+            if from_habit_list:
+                added, merged, unchanged = from_habit_list.merge_and_categorize(to_habit_list)
+                user_storage_module.save_user_habit_list(user, merged)
                 logging.info(f"Imported {len(to_habit_list.habits)} habits, added {len(added)}, merged {len(merged)}, unchanged {len(unchanged)}.")
             else:
-                await user_storage_module.save_user_habit_list(user, to_habit_list)
+                user_storage_module.save_user_habit_list(user, to_habit_list)
                 logging.info(f"Imported {len(to_habit_list.habits)} new habits.")
 
             ui.notify(
@@ -54,3 +54,4 @@ async def import_ui_page(user: User):
 
     # Upload: https://nicegui.io/documentation/upload
     ui.upload(on_upload=handle_upload, max_files=1).props("accept=.json")
+    return
