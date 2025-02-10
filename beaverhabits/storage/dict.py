@@ -35,12 +35,10 @@ class DictRecord(CheckedRecord, DictStorage):
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
     def __init__(self, name: str, status: HabitStatus = HabitStatus.ACTIVE):
-        self.data = {"name": name, "records": [], "status": status.value}
+        self.data = {"name": name, "records": [], "status": status.value, "id": generate_short_hash(name)}
 
     @property
     def id(self) -> str:
-        if "id" not in self.data:
-            self.data["id"] = generate_short_hash(self.name)
         return self.data["id"]
 
     @property
@@ -65,7 +63,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
     @property
     def status(self) -> HabitStatus:
-        return HabitStatus(self.data["status"])
+        return HabitStatus(self.data.get("status", HabitStatus.ACTIVE.value))
 
     @status.setter
     def status(self, value: HabitStatus) -> None:
@@ -106,7 +104,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
     def habits(self) -> list[DictHabit]:
-        habits = [DictHabit(d["name"], HabitStatus(d["status"])) for d in self.data["habits"] if HabitStatus(d["status"]) in [HabitStatus.ACTIVE, HabitStatus.INACTIVE]]
+        habits = [DictHabit(d["name"], HabitStatus(d.get("status", HabitStatus.ACTIVE.value))) for d in self.data["habits"]]
 
         if self.order:
             habits.sort(
@@ -134,7 +132,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                 return habit
 
     async def add(self, name: str) -> None:
-        d = {"name": name, "records": [], "status": HabitStatus.ACTIVE.value}
+        d = {"name": name, "records": [], "status": HabitStatus.ACTIVE.value, "id": generate_short_hash(name)}
         self.data["habits"].append(d)
 
     async def remove(self, item: DictHabit) -> None:
