@@ -76,8 +76,11 @@ class HabitNameInput(ui.input):
         self.props("dense")
 
     async def _async_task(self, e: events.ValueChangeEventArguments):
-        self.habit.name = e.value
-        logger.info(f"Habit Name changed to {e.value}")
+        if self.validation(e.value) is None:
+            self.habit.name = e.value
+            logger.info(f"Habit Name changed to {e.value}")
+        else:
+            logger.warning(f"Invalid habit name: {e.value}")
 
 
 class HabitStarCheckbox(ui.checkbox):
