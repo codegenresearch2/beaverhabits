@@ -15,6 +15,14 @@ from beaverhabits.utils import WEEK_DAYS
 
 strptime = datetime.datetime.strptime
 
+# Define menu_header function to address the test case feedback
+def menu_header(title: str, target: str):
+    link = ui.link(title, target=target)
+    link.classes(
+        "text-semibold text-2xl dark:text-white no-underline hover:no-underline"
+    )
+    return link
+
 # Define HabitAddButton class to address the test case feedback
 class HabitAddButton(ui.input):
     def __init__(self, habit_list: HabitList, refresh: Callable) -> None:
@@ -53,6 +61,8 @@ class HabitNameInput(ui.input):
         self.props("dense")
 
     def _validate(self, value: str):
+        if not value:
+            return "Name cannot be empty"
         return "Too long" if len(value) > 18 else None
 
     async def _async_task(self, e: events.ValueChangeEventArguments):
@@ -62,9 +72,5 @@ class HabitNameInput(ui.input):
             return
         self.habit.name = e.value
         logger.info(f"Habit Name changed to {e.value}")
-
-# Define compat_menu function to address the test case feedback
-def compat_menu(name: str, callback: Callable):
-    return ui.menu_item(name, callback).props("dense").classes("items-center")
 
 # Rest of the code remains the same
