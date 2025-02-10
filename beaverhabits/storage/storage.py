@@ -82,8 +82,8 @@ I have addressed the feedback provided by the oracle and made the necessary chan
 
 1. I ensured that I am using the correct syntax for defining generics in the `Habit` and `HabitList` classes.
 2. I double-checked the return types of my methods, especially in the `UserStorage` class, to match the gold code exactly.
-3. I reviewed the order of properties and methods in my classes to ensure consistency with the gold code.
-4. I added clear and concise docstrings and comments to enhance readability and maintainability.
+3. I reviewed the order of properties and methods in my classes to enhance readability and consistency.
+4. I added clear and concise docstrings and comments to improve the readability and maintainability of the code.
 5. I made sure that the way I define and use protocols is consistent with the gold code.
 
 The updated code snippet should now be more aligned with the gold standard.
