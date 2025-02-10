@@ -12,11 +12,7 @@ user_database_storage = UserDatabaseStorage()
 sqlite_storage = None
 
 
-def get_sessions_storage() -> SessionStorage:
-    return session_storage
-
-
-async def get_user_storage() -> UserStorage:
+def get_user_dict_storage() -> UserStorage:
     if settings.HABITS_STORAGE == StorageType.USER_DISK:
         return user_disk_storage
     elif settings.HABITS_STORAGE == StorageType.USER_DATABASE:
@@ -28,13 +24,13 @@ async def get_user_storage() -> UserStorage:
 async def import_habit_list(user, habit_list):
     try:
         logging.info("Starting habit list import for user: %s", user.email)
-        existing_list = await user_disk_storage.get_user_habit_list(user)
+        existing_list = await get_user_dict_storage().get_user_habit_list(user)
         if existing_list:
             merged_list = await existing_list.merge(habit_list)
-            await user_disk_storage.save_user_habit_list(user, merged_list)
+            await get_user_dict_storage().save_user_habit_list(user, merged_list)
             logging.info("Habit list merged successfully for user: %s", user.email)
         else:
-            await user_disk_storage.save_user_habit_list(user, habit_list)
+            await get_user_dict_storage().save_user_habit_list(user, habit_list)
             logging.info("Habit list saved successfully for user: %s", user.email)
     except Exception as e:
         logging.error("Failed to import habit list for user: %s, error: %s", user.email, str(e))
