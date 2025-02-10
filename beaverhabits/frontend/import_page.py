@@ -11,7 +11,7 @@ from beaverhabits.views import user_storage
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-async def import_from_json(text: str) -> HabitList:
+def import_from_json(text: str) -> HabitList:
     try:
         d = json.loads(text)
         habit_list = DictHabitList(d)
@@ -25,33 +25,36 @@ async def import_from_json(text: str) -> HabitList:
         logging.exception(f"Error importing habits: {e}")
         raise ValueError(f"Error importing habits: {e}")
 
-async def import_ui_page(user: User):
+def import_ui_page(user: User):
     with ui.dialog() as dialog, ui.card().classes("w-64"):
         ui.label("Are you sure? All your current habits will be replaced.")
         with ui.row():
             ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
             ui.button("No", on_click=lambda: dialog.submit("No"))
 
-    async def handle_upload(e: events.UploadEventArguments):
+    def handle_upload(e: events.UploadEventArguments):
         try:
-            result = await dialog
+            result = dialog.value
             if result != "Yes":
                 return
 
             text = e.content.read().decode("utf-8")
-            to_habit_list = await import_from_json(text)
-            existing_habit_list = await user_storage.get_user_habit_list(user)
+            to_habit_list = import_from_json(text)
+            existing_habit_list = user_storage.get_user_habit_list(user)
 
             if existing_habit_list is None:
-                await user_storage.save_user_habit_list(user, to_habit_list)
+                user_storage.save_user_habit_list(user, to_habit_list)
                 logging.info(f"Imported {len(to_habit_list.habits)} new habits")
             else:
-                added_habits = [habit for habit in to_habit_list.habits if habit.id not in {habit.id for habit in existing_habit_list.habits}]
-                merged_habits = [habit for habit in to_habit_list.habits if habit.id in {habit.id for habit in existing_habit_list.habits}]
-                unchanged_habits = [habit for habit in existing_habit_list.habits if habit.id in {habit.id for habit in to_habit_list.habits}]
+                existing_habit_ids = set(habit.id for habit in existing_habit_list.habits)
+                to_habit_ids = set(habit.id for habit in to_habit_list.habits)
+                
+                added_habits = [habit for habit in to_habit_list.habits if habit.id not in existing_habit_ids]
+                merged_habits = [habit for habit in to_habit_list.habits if habit.id in existing_habit_ids]
+                unchanged_habits = [habit for habit in existing_habit_list.habits if habit.id in to_habit_ids]
 
-                merged_habit_list = await existing_habit_list.merge(to_habit_list)
-                await user_storage.save_user_habit_list(user, merged_habit_list)
+                merged_habit_list = existing_habit_list.merge(to_habit_list)
+                user_storage.save_user_habit_list(user, merged_habit_list)
 
                 logging.info(f"Imported {len(added_habits)} new habits and {len(merged_habits)} merged habits")
 
@@ -62,6 +65,8 @@ async def import_ui_page(user: User):
             )
         except ValueError as e:
             ui.notify(str(e), color="negative", position="top")
+        except json.JSONDecodeError:
+            ui.notify("Import failed: Invalid JSON", color="negative", position="top")
         except Exception as e:
             ui.notify("An error occurred. Please try again later.", color="negative", position="top")
             logging.exception(f"Error importing habits: {e}")
