@@ -81,6 +81,28 @@ class DictHabit(Habit[DictRecord], DictStorage):
             data = {"day": day.strftime(DAY_MASK), "done": done}
             self.data["records"].append(data)
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DictHabit):
+            return False
+        return self.id == other.id and self.name == other.name and self.star == other.star and self.records == other.records
+
+    def __hash__(self) -> int:
+        return hash((self.id, self.name, self.star, tuple(self.records)))
+
+    def merge(self, other: 'DictHabit') -> 'DictHabit':
+        merged_habit = DictHabit()
+        merged_habit.data["id"] = self.id
+        merged_habit.data["name"] = self.name
+        merged_habit.data["star"] = self.star
+        merged_habit.data["records"] = self.records + other.records
+        return merged_habit
+
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
@@ -101,6 +123,11 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
+
+    def merge(self, other: 'DictHabitList') -> 'DictHabitList':
+        merged_list = DictHabitList()
+        merged_list.data["habits"] = self.data["habits"] + other.data["habits"]
+        return merged_list
 
 
 class UserStorageImpl(UserStorage[DictHabitList]):
