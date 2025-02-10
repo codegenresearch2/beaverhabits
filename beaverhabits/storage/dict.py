@@ -15,18 +15,18 @@ class DictStorage:
 @dataclass
 class DictRecord(CheckedRecord, DictStorage):
     """
-    Read (d1~d3)
-    persistent    ->     memory      ->     view
-    d0: [x]              d0: [x]
-                                            d1: [ ]
-    d2: [x]              d2: [x]            d2: [x]
-                                            d3: [ ]
-
-    Update:
-    view(update)  ->     memory      ->     persistent
-    d1: [ ]
-    d2: [ ]              d2: [ ]            d2: [x]
-    d3: [x]              d3: [x]            d3: [ ]
+    # Read (d1~d3)
+    # persistent    ->     memory      ->     view
+    # d0: [x]              d0: [x]
+    #                                        d1: [ ]
+    # d2: [x]              d2: [x]            d2: [x]
+    #                                        d3: [ ]
+    #
+    # Update:
+    # view(update)  ->     memory      ->     persistent
+    # d1: [ ]
+    # d2: [ ]              d2: [ ]            d2: [x]
+    # d3: [x]              d3: [x]            d3: [ ]
     """
 
     @property
@@ -72,11 +72,11 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
     @property
     def status(self) -> HabitStatus:
-        return self.data.get("status", HabitStatus.ACTIVE)
+        return HabitStatus(self.data.get("status", HabitStatus.ACTIVE.value))
 
     @status.setter
     def status(self, value: HabitStatus) -> None:
-        self.data["status"] = value
+        self.data["status"] = value.value
 
     @property
     def records(self) -> list[DictRecord]:
@@ -115,12 +115,18 @@ class DictHabit(Habit[DictRecord], DictStorage):
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
+    STATUS_ORDER = {
+        HabitStatus.ACTIVE: 0,
+        HabitStatus.ARCHIVED: 1,
+        HabitStatus.SOLF_DELETED: 2,
+    }
+
     @property
     def habits(self) -> list[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"] if DictHabit(d).status != HabitStatus.ARCHIVED]
 
         # Sort by order and then by status
-        habits.sort(key=lambda x: (self.order.index(str(x.id)) if str(x.id) in self.order else float("inf"), x.status.value))
+        habits.sort(key=lambda x: (self.order.index(str(x.id)) if str(x.id) in self.order else float("inf"), self.STATUS_ORDER[x.status]))
 
         return habits
 
@@ -140,12 +146,10 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
     async def add(self, name: str) -> None:
         if not name:
             raise ValueError("Name cannot be empty")
-        d = {"name": name, "records": [], "id": generate_short_hash(name), "status": HabitStatus.ACTIVE}
+        d = {"name": name, "records": [], "id": generate_short_hash(name), "status": HabitStatus.ACTIVE.value}
         self.data["habits"].append(d)
 
     async def remove(self, item: DictHabit) -> None:
-        if item not in self.habits:
-            raise ValueError("Habit not found in the list")
         self.data["habits"].remove(item.data)
 
     async def merge(self, other: "DictHabitList") -> "DictHabitList":
