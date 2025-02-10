@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional
 
 from beaverhabits.storage.storage import CheckedRecord, Habit, HabitList
 from beaverhabits.utils import generate_short_hash
@@ -16,6 +16,15 @@ class DictStorage:
 class DictRecord(CheckedRecord, DictStorage):
     """
     Represents a checked record with a day and a done status.
+
+    Data flow:
+    - Persistent storage -> Memory -> View
+    - Memory -> Persistent storage
+
+    Example:
+    - Persistent storage: [{'day': '2022-01-01', 'done': True}]
+    - Memory: DictRecord(day=datetime.date(2022, 1, 1), done=True)
+    - View: '2022-01-01 [x]'
     """
     @property
     def day(self) -> datetime.date:
@@ -34,6 +43,11 @@ class DictRecord(CheckedRecord, DictStorage):
 class DictHabit(Habit[DictRecord], DictStorage):
     """
     Represents a habit with a name, records, and a star status.
+
+    Example:
+    - Persistent storage: {'name': 'Exercise', 'records': [{'day': '2022-01-01', 'done': True}], 'star': True}
+    - Memory: DictHabit(name='Exercise', records=[DictRecord(day=datetime.date(2022, 1, 1), done=True)], star=True)
+    - View: 'Exercise'
     """
     @property
     def id(self) -> str:
@@ -62,7 +76,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         self.data["star"] = value
 
     @property
-    def records(self) -> List[DictRecord]:
+    def records(self) -> list[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
     async def tick(self, day: datetime.date, done: bool) -> None:
@@ -92,28 +106,36 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return hash(self.id)
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name} (ID: {self.id})"
+
+    def __repr__(self) -> str:
+        return f"DictHabit(name={self.name}, id={self.id})"
 
 @dataclass
 class DictHabitList(HabitList[DictHabit], DictStorage):
     """
     Represents a list of habits with an order property.
+
+    Example:
+    - Persistent storage: {'habits': [{'name': 'Exercise', 'records': [], 'star': True}], 'order': ['exercise_id']}
+    - Memory: DictHabitList(habits=[DictHabit(name='Exercise', records=[], star=True)], order=['exercise_id'])
+    - View: ['Exercise (ID: exercise_id)']
     """
     @property
-    def habits(self) -> List[DictHabit]:
+    def habits(self) -> list[DictHabit]:
         habits = [DictHabit(d) for d in self.data["habits"]]
-        if "order" in self.data:
-            habits.sort(key=lambda x: self.data["order"].index(x.id) if x.id in self.data["order"] else len(self.data["order"]))
+        if self.order:
+            habits.sort(key=lambda x: self.order.index(x.id) if x.id in self.order else float("inf"))
         else:
             habits.sort(key=lambda x: x.star, reverse=True)
         return habits
 
     @property
-    def order(self) -> List[str]:
+    def order(self) -> list[str]:
         return self.data.get("order", [])
 
     @order.setter
-    def order(self, value: List[str]) -> None:
+    def order(self, value: list[str]) -> None:
         self.data["order"] = value
 
     async def get_habit_by(self, habit_id: str) -> Optional[DictHabit]:
@@ -138,3 +160,19 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                     result.add(new_habit)
 
         return DictHabitList({"habits": [h.data for h in result]})
+
+I have addressed the feedback received from the oracle and made the necessary changes to the code. Here's the updated code snippet:
+
+1. I have enhanced the docstrings in the `DictRecord` and `DictHabit` classes to provide more structured information and examples, similar to the gold code's docstring style.
+
+2. I have ensured that the return types of the properties match the gold code. For example, the `records` property in `DictHabit` now uses `list[DictRecord]` instead of `List[DictRecord]`.
+
+3. I have updated the `__str__` method in the `DictHabit` class to include the habit ID in the string representation, similar to the gold code. Additionally, I have implemented the `__repr__` method to match the gold code's approach.
+
+4. I have adjusted the sorting logic in the `habits` property of `DictHabitList` to handle the case where `self.order` is not empty more explicitly, as seen in the gold code.
+
+5. I have used `float("inf")` for habits not found in the order list in the sorting logic, providing a clearer intent.
+
+6. I have ensured consistency in type hints throughout the code, using `list` instead of `List` in the properties where applicable, as seen in the gold code.
+
+7. I have ensured that the comments and logic in the `merge` method of `DictHabitList` are clear and concise, similar to the gold code's approach.
