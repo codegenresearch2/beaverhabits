@@ -23,11 +23,12 @@ def import_ui_page(user: User):
             existing_habit_list = await user_storage.get_user_habit_list(user)
             
             if existing_habit_list:
-                added, merged, unchanged = existing_habit_list.calculate_import_stats(to_habit_list)
-                logging.info(f"Added: {added}, Merged: {merged}, Unchanged: {unchanged}")
+                added = len(set(to_habit_list.habits) - set(existing_habit_list.habits))
+                merged = len(set(to_habit_list.habits) & set(existing_habit_list.habits))
+                logging.info(f"Added: {added}, Merged: {merged}")
                 
                 with ui.dialog() as dialog, ui.card().classes("w-64"):
-                    ui.label(f"Are you sure? {added} habits will be added, {merged} will be merged, and {unchanged} will remain unchanged.")
+                    ui.label(f"Are you sure? {added} new habit(s) and {merged} merged habit(s) will be imported.")
                     with ui.row():
                         ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
                         ui.button("No", on_click=lambda: dialog.submit("No"))
