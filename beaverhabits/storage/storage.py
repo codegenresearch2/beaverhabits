@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Optional, Protocol
+from typing import List, Optional, Protocol, TypeVar
 
 class CheckedRecord(Protocol):
     @property
@@ -16,7 +16,9 @@ class CheckedRecord(Protocol):
 
     __repr__ = __str__
 
-class Habit(Protocol):
+CheckedRecordType = TypeVar('CheckedRecordType', bound=CheckedRecord)
+
+class Habit(Protocol[CheckedRecordType]):
     @property
     def id(self) -> str | int: ...
 
@@ -33,7 +35,7 @@ class Habit(Protocol):
     def star(self, value: int) -> None: ...
 
     @property
-    def records(self) -> List["CheckedRecord"]: ...
+    def records(self) -> List[CheckedRecordType]: ...
 
     @property
     def ticked_days(self) -> List[datetime.date]:
@@ -46,9 +48,11 @@ class Habit(Protocol):
 
     __repr__ = __str__
 
-class HabitList(Protocol):
+HabitType = TypeVar('HabitType', bound=Habit)
+
+class HabitList(Protocol[HabitType]):
     @property
-    def habits(self) -> List["Habit"]: ...
+    def habits(self) -> List[HabitType]: ...
 
     @property
     def order(self) -> List[str]: ...
@@ -58,9 +62,9 @@ class HabitList(Protocol):
 
     async def add(self, name: str) -> None: ...
 
-    async def remove(self, item: Habit) -> None: ...
+    async def remove(self, item: HabitType) -> None: ...
 
-    async def get_habit_by(self, habit_id: str) -> Optional[Habit]: ...
+    async def get_habit_by(self, habit_id: str) -> Optional[HabitType]: ...
 
 class SessionStorage(Protocol):
     def get_user_habit_list(self) -> Optional[HabitList]: ...
