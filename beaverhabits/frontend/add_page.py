@@ -27,18 +27,14 @@ def habit_item(item, habit_list):
 
 @ui.refreshable
 def add_ui(habit_list: HabitList):
-    for item in habit_list.habits:
-        habit_item(item, habit_list)
+    with ui.column().classes("w-full pl-1 items-center"):
+        for item in habit_list.habits:
+            with ui.row().classes(grid_classes):
+                habit_item(item, habit_list)
 
-@ui.refreshable
-def add_page_ui(habit_list: HabitList):
-    with layout():
-        with ui.column().classes("w-full pl-1 items-center"):
-            add_ui(habit_list)
-
-            with ui.grid(columns=9, rows=1).classes(grid_classes):
-                add = HabitAddButton(habit_list, add_ui.refresh)
-                add.classes("col-span-7")
+        with ui.row().classes(grid_classes):
+            add = HabitAddButton(habit_list, add_ui.refresh)
+            add.classes("col-span-7")
 
 @ui.page('/')
 def index():
@@ -65,9 +61,12 @@ def about_page():
     # TODO: Add about page UI components here
     pass
 
-async def item_drop(e):
+async def item_drop(e, habit_list: HabitList):
     logger.info(f"Item dropped: {e.args}")
-    # TODO: Add logic to handle item drop event
+    dragged_element = ui.context.client.elements[e.args['dragged']]
+    target_element = ui.context.client.elements[e.args['target']]
+
+    # TODO: Add logic to handle item drop event and update habit order
 
 # Add JavaScript snippet for handling sortable functionality
 ui.add_head_html("""
