@@ -1,3 +1,4 @@
+from enum import Enum
 from nicegui import ui
 from beaverhabits.frontend import components
 from beaverhabits.frontend.components import (
@@ -11,8 +12,13 @@ from beaverhabits.logging import logger
 from beaverhabits.storage.storage import HabitList
 
 
+class HabitStatus(Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+
 class Habit:
-    def __init__(self, id, name, status="default"):
+    def __init__(self, id, name, status=HabitStatus.ACTIVE):
         self.id = id
         self.name = name
         self.status = status
@@ -21,7 +27,7 @@ class Habit:
 class DictHabit(dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.status = "default"
+        self.status = HabitStatus.ACTIVE
 
     @property
     def name(self):
@@ -33,11 +39,11 @@ class DictHabit(dict):
 
     @property
     def status(self):
-        return self.get("status", "default")
+        return HabitStatus(self.get("status", HabitStatus.ACTIVE.value))
 
     @status.setter
     def status(self, value):
-        self["status"] = value
+        self["status"] = value.value
 
 
 class HabitList:
@@ -79,19 +85,24 @@ async def item_drop(e, habit_list: HabitList):
 def add_ui(habit_list: HabitList):
     with ui.column().classes("sortable").classes("gap-3"):
         for item in habit_list.habits:
-            with components.HabitOrderCard(item):
-                with ui.grid(columns=12, rows=1).classes("gap-0 items-center"):
-                    name = HabitNameInput(item)
-                    name.classes("col-span-3 col-3")
-                    name.props("borderless")
+            if item.status == HabitStatus.ACTIVE:
+                with components.HabitOrderCard(item):
+                    with ui.grid(columns=12, rows=1).classes("gap-0 items-center"):
+                        name = HabitNameInput(item)
+                        name.classes("col-span-3 col-3")
+                        name.props("borderless")
 
-                    ui.space().classes("col-span-7")
+                        ui.space().classes("col-span-7")
 
-                    star = HabitStarCheckbox(item, add_ui.refresh)
-                    star.classes("col-span-1")
+                        star = HabitStarCheckbox(item, add_ui.refresh)
+                        star.classes("col-span-1")
 
-                    delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
-                    delete.classes("col-span-1")
+                        delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
+                        delete.classes("col-span-1")
+            else:
+                with components.HabitOrderCard(item):
+                    with ui.grid(columns=12, rows=1).classes("gap-0 items-center"):
+                        ui.label(item.name).classes("col-span-12")
 
 
 def order_page_ui(habit_list: HabitList):
