@@ -8,7 +8,7 @@ from beaverhabits.storage.meta import get_root_path
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
-def import_from_json(text: str) -> HabitList:
+async def import_from_json(text: str) -> HabitList:
     d = json.loads(text)
     habit_list = DictHabitList(d)
     if not habit_list.habits:
@@ -29,11 +29,12 @@ async def import_ui_page(user: User):
                 return
 
             text = e.content.read().decode("utf-8")
-            to_habit_list = import_from_json(text)
+            to_habit_list = await import_from_json(text)
             existing_habit_list = await user_storage.get_user_habit_list(user)
             if existing_habit_list:
+                added, merged, unchanged = existing_habit_list.calculate_import_stats(to_habit_list)
+                logging.info(f"Added: {added}, Merged: {merged}, Unchanged: {unchanged}")
                 await existing_habit_list.merge(to_habit_list)
-                logging.info("Habits merged successfully.")
             else:
                 await user_storage.save_user_habit_list(user, to_habit_list)
                 logging.info("Habits imported successfully.")
