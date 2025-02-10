@@ -30,14 +30,14 @@ def import_ui_page(user: User):
             other = await import_from_json(text)
             current = await get_current_habit_list()
 
-            to_add = set(other.habits) - set(current.habits)
-            to_merge = set(other.habits) & set(current.habits)
+            added = set(other.habits) - set(current.habits)
+            merged = set(other.habits) & set(current.habits)
             unchanged = set(current.habits) - set(other.habits)
 
-            logging.info(f"To add: {len(to_add)}, to merge: {len(to_merge)}, unchanged: {len(unchanged)}")
+            logging.info(f"Added: {len(added)}, Merged: {len(merged)}, Unchanged: {len(unchanged)}")
 
             with ui.dialog() as dialog, ui.card().classes("w-64"):
-                ui.label(f"Are you sure? {len(to_add)} habits will be added and {len(to_merge)} habits will be merged.")
+                ui.label(f"Are you sure? {len(added)} habits will be added and {len(merged)} habits will be merged.")
                 with ui.row():
                     ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
                     ui.button("No", on_click=lambda: dialog.submit("No"))
@@ -50,18 +50,19 @@ def import_ui_page(user: User):
             await user_storage.save_user_habit_list(user, merged_habit_list)
 
             ui.notify(
-                f"Imported and merged {len(to_add) + len(to_merge)} habits",
+                f"Imported and merged {len(added) + len(merged)} habits",
                 position="top",
                 color="positive",
             )
         except json.JSONDecodeError as e:
-            logging.error(f"Import failed: Invalid JSON - {str(e)}")
+            logging.exception("Import failed: Invalid JSON")
             ui.notify("Import failed: Invalid JSON", color="negative", position="top")
         except Exception as error:
-            logging.error(f"Import failed: {str(error)}")
+            logging.exception("Import failed")
             ui.notify(str(error), color="negative", position="top")
 
     menu_header("Import", target=get_root_path())
 
+    # Upload functionality: allows users to upload a JSON file containing habits
     ui.upload(on_upload=handle_upload, max_files=1).props("accept=.json")
     return
