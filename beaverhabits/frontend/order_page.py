@@ -7,15 +7,19 @@ from beaverhabits.logging import logger
 from beaverhabits.storage.storage import HabitList, HabitStatus
 
 async def item_drop(e, habit_list: HabitList):
-    logger.info(f"Item dropped: {e.args['id']} to index {e.args['new_index']}")
     elements = ui.context.client.elements
     dragged = elements[int(e.args["id"][1:])]
     dragged.move(target_index=e.args["new_index"])
 
-    habit_list.update_order(dragged.habit, e.args["new_index"])
+    assert dragged.parent_slot is not None
+    habits = [
+        x.habit
+        for x in dragged.parent_slot.children
+        if isinstance(x, components.HabitOrderCard) and x.habit
+    ]
+    habit_list.order = [str(x.id) for x in habits]
     habit_list.update_status()
-    logger.info(f"New order: {habit_list.order}")
-    add_ui.refresh()
+    logger.info(f"Item dropped: {dragged.habit.name} to index {e.args['new_index']}. New order: {habit_list.order}")
 
 @ui.refreshable
 def add_ui(habit_list: HabitList):
@@ -23,15 +27,14 @@ def add_ui(habit_list: HabitList):
         for item in habit_list.habits:
             with components.HabitOrderCard(item):
                 with ui.grid(columns=12, rows=1).classes("gap-0 items-center"):
-                    if item.status == HabitStatus.UNARCHIVED:
-                        name = HabitNameInput(item)
-                    else:
-                        name = ui.label(item.name)
+                    name = HabitNameInput(item) if item.status == HabitStatus.UNARCHIVED else ui.label(item.name)
                     name.classes("col-span-9")
                     name.props("borderless")
 
+                    ui.space().classes("col-span-1")
+
                     delete = HabitDeleteButton(item, habit_list, add_ui.refresh)
-                    delete.classes("col-span-3")
+                    delete.classes("col-span-2")
 
 def order_page_ui(habit_list: HabitList):
     with layout():
