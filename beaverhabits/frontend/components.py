@@ -15,28 +15,16 @@ from beaverhabits.utils import WEEK_DAYS
 
 strptime = datetime.datetime.strptime
 
-# Define HabitAddCard class to address the test case feedback
-class HabitAddCard(ui.card):
-    def __init__(self, habit_list: HabitList, refresh: Callable) -> None:
-        super().__init__()
-        self.habit_list = habit_list
-        self.refresh = refresh
-        self.classes("p-3 gap-0 no-shadow items-center w-full")
-        self.style("max-width: 350px")
-        self.add_input()
-
-    def add_input(self):
-        self.input = HabitAddInput(self.habit_list, self.refresh)
-
-class HabitAddInput(ui.input):
+# Define HabitAddButton class to address the test case feedback
+class HabitAddButton(ui.input):
     def __init__(self, habit_list: HabitList, refresh: Callable) -> None:
         super().__init__("New item")
         self.habit_list = habit_list
         self.refresh = refresh
-        self.on("keydown.enter", self._async_task)
+        self.on("keydown.enter", self._add_habit)
         self.props("dense")
 
-    async def _async_task(self):
+    async def _add_habit(self):
         logger.info(f"Adding new habit: {self.value}")
         await self.habit_list.add(self.value)
         self.refresh()
