@@ -11,11 +11,11 @@ from beaverhabits.storage.storage import HabitList
 from beaverhabits.views import user_storage
 
 async def import_from_json(text: str) -> HabitList:
-    d = json.loads(text)
-    habit_list = DictHabitList(d)
+    data = json.loads(text)
+    habit_list = DictHabitList(data)
     if not habit_list.habits:
         raise ValueError("No habits found")
-    return HabitList(habit_list.data)
+    return habit_list
 
 async def merge_habits(user: User, to_habit_list: HabitList):
     current_habit_list = await user_storage.get_user_habit_list(user)
@@ -23,14 +23,11 @@ async def merge_habits(user: User, to_habit_list: HabitList):
         await user_storage.save_user_habit_list(user, to_habit_list)
         logging.info(f"Imported {len(to_habit_list.habits)} new habits")
     else:
-        current_habits = set(current_habit_list.habits)
-        to_habits = set(to_habit_list.habits)
-        added = to_habits - current_habits
-        merged = current_habits & to_habits
-        unchanged = current_habits - to_habits
-        current_habit_list.habits = list(current_habits | to_habits)
-        await user_storage.save_user_habit_list(user, current_habit_list)
-        logging.info(f"Imported {len(added)} new habits, merged {len(merged)} habits, and {len(unchanged)} habits were unchanged")
+        merged_habit_list = await user_storage.merge_user_habit_list(user, to_habit_list)
+        added = len(merged_habit_list.habits) - len(current_habit_list.habits)
+        merged = len(set(current_habit_list.habits) & set(to_habit_list.habits))
+        unchanged = len(current_habit_list.habits) - merged
+        logging.info(f"Imported {added} new habits, merged {merged} habits, and {unchanged} habits were unchanged")
 
 def import_ui_page(user: User):
     async def handle_upload(e: events.UploadEventArguments):
@@ -41,12 +38,10 @@ def import_ui_page(user: User):
             if current_habit_list is None:
                 message = f"Are you sure? All your current habits will be replaced with {len(to_habit_list.habits)} habits."
             else:
-                current_habits = set(current_habit_list.habits)
-                to_habits = set(to_habit_list.habits)
-                added = to_habits - current_habits
-                merged = current_habits & to_habits
-                unchanged = len(current_habits) - len(merged)
-                message = f"Are you sure? {len(added)} new habits will be added, {len(merged)} habits will be merged, and {unchanged} habits will remain unchanged."
+                added = len(to_habit_list.habits) - len(current_habit_list.habits)
+                merged = len(set(current_habit_list.habits) & set(to_habit_list.habits))
+                unchanged = len(current_habit_list.habits) - merged
+                message = f"Are you sure? {added} new habits will be added, {merged} habits will be merged, and {unchanged} habits will remain unchanged."
 
             with ui.dialog() as dialog, ui.card().classes("w-64"):
                 ui.label(message)
