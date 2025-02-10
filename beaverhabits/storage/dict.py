@@ -133,6 +133,8 @@ class DictHabit(Habit[DictRecord], DictStorage):
         Returns:
             bool: True if the habits are equal, False otherwise.
         """
+        if not isinstance(other, DictHabit):
+            return NotImplemented
         return self.id == other.id
 
     def __hash__(self) -> int:
