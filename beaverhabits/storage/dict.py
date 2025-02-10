@@ -30,7 +30,6 @@ class DictRecord(CheckedRecord, DictStorage):
     @done.setter
     def done(self, value: bool) -> None:
         self.data["done"] = value
-        logging.info(f"Updated record for {self.day} to {value}")
 
 @dataclass
 class DictHabit(Habit[DictRecord], DictStorage):
@@ -54,7 +53,6 @@ class DictHabit(Habit[DictRecord], DictStorage):
     @name.setter
     def name(self, value: str) -> None:
         self.data["name"] = value
-        logging.info(f"Updated habit name to {value}")
 
     @property
     def star(self) -> bool:
@@ -63,7 +61,6 @@ class DictHabit(Habit[DictRecord], DictStorage):
     @star.setter
     def star(self, value: int) -> None:
         self.data["star"] = value
-        logging.info(f"Updated habit star to {value}")
 
     @property
     def records(self) -> list[DictRecord]:
@@ -75,7 +72,6 @@ class DictHabit(Habit[DictRecord], DictStorage):
         else:
             data = {"day": day.strftime(DAY_MASK), "done": done}
             self.data["records"].append(data)
-            logging.info(f"Added new record for {day} with status {done}")
 
     def __eq__(self, other):
         if isinstance(other, DictHabit):
@@ -104,17 +100,14 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
         for habit in self.habits:
             if habit.id == habit_id:
                 return habit
-        logging.warning(f"No habit found with id {habit_id}")
         return None
 
     async def add(self, name: str) -> None:
         d = {"name": name, "records": [], "id": generate_short_hash(name)}
         self.data["habits"].append(d)
-        logging.info(f"Added new habit: {name}")
 
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
-        logging.info(f"Removed habit: {item.name}")
 
     def merge(self, other: 'DictHabitList') -> 'DictHabitList':
         # Implement merge functionality here
