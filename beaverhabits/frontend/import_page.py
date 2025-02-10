@@ -11,7 +11,7 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-def import_from_json(text: str) -> HabitList:
+async def import_from_json(text: str) -> HabitList:
     try:
         d = json.loads(text)
         habit_list = DictHabitList(d)
@@ -28,19 +28,23 @@ def import_from_json(text: str) -> HabitList:
         logging.error(f"An error occurred: {e}")
         raise
 
-def import_ui_page(user: User):
+async def import_ui_page(user: User):
     async def handle_upload(e: events.UploadEventArguments):
         try:
+            result = await dialog
+            if result != "Yes":
+                return
+
             text = e.content.read().decode("utf-8")
-            to_habit_list = import_from_json(text)
-            existing_habit_list = user_storage_module.get_user_habit_list(user)
+            to_habit_list = await import_from_json(text)
+            existing_habit_list = await user_storage_module.get_user_habit_list(user)
 
             if existing_habit_list:
                 added, merged, unchanged = existing_habit_list.merge_and_categorize(to_habit_list)
-                user_storage_module.save_user_habit_list(user, merged)
+                await user_storage_module.save_user_habit_list(user, merged)
                 logging.info(f"Imported {len(to_habit_list.habits)} habits, added {len(added)}, merged {len(merged)}, unchanged {len(unchanged)}.")
             else:
-                user_storage_module.save_user_habit_list(user, to_habit_list)
+                await user_storage_module.save_user_habit_list(user, to_habit_list)
                 logging.info(f"Imported {len(to_habit_list.habits)} new habits.")
 
             message = f"Imported {len(to_habit_list.habits)} habits"
@@ -57,6 +61,12 @@ def import_ui_page(user: User):
         except Exception as error:
             logging.exception("Import failed")
             ui.notify(str(error), color="negative", position="top")
+
+    with ui.dialog() as dialog, ui.card().classes("w-64"):
+        ui.label("Are you sure? All your current habits will be replaced.")
+        with ui.row():
+            ui.button("Yes", on_click=lambda: dialog.submit("Yes"))
+            ui.button("No", on_click=lambda: dialog.submit("No"))
 
     menu_header("Import", target=get_root_path())
 
