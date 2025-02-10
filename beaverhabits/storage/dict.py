@@ -82,6 +82,18 @@ class DictHabit(Habit[DictRecord], DictStorage):
     def records(self) -> list[DictRecord]:
         return [DictRecord(d) for d in self.data["records"]]
 
+    @property
+    def status(self) -> HabitStatus:
+        return HabitStatus(self.data.get("status", "normal"))
+
+    @status.setter
+    def status(self, value: HabitStatus) -> None:
+        self.data["status"] = value.value
+
+    @property
+    def ticked_days(self) -> list[datetime.date]:
+        return [r.day for r in self.records if r.done]
+
     async def tick(self, day: datetime.date, done: bool) -> None:
         if record := next((r for r in self.records if r.day == day), None):
             record.done = done
@@ -99,6 +111,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
             "records": [
                 {"day": day.strftime(DAY_MASK), "done": True} for day in result
             ],
+            "status": self.status.value,
         }
         return DictHabit(d)
 
@@ -109,7 +122,7 @@ class DictHabit(Habit[DictRecord], DictStorage):
         return hash(self.id)
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name}<{self.id}>"
 
     __repr__ = __str__
 
@@ -118,7 +131,8 @@ class DictHabit(Habit[DictRecord], DictStorage):
 class DictHabitList(HabitList[DictHabit], DictStorage):
     @property
     def habits(self) -> list[DictHabit]:
-        habits = [DictHabit(d) for d in self.data["habits"]]
+        valid_habits = [habit for habit in self.data.get("habits", []) if habit.get("status") != "soft_delete"]
+        habits = [DictHabit(d) for d in valid_habits]
 
         # Sort by order
         if self.order:
@@ -146,7 +160,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                 return habit
 
     async def add(self, name: str) -> None:
-        d = {"name": name, "records": [], "id": generate_short_hash(name)}
+        d = {"name": name, "records": [], "id": generate_short_hash(name), "status": "normal"}
         self.data["habits"].append(d)
 
     async def remove(self, item: DictHabit) -> None:
