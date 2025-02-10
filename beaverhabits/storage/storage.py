@@ -62,16 +62,6 @@ class HabitList[H: Habit](Protocol):
 
     async def get_habit_by(self, habit_id: str) -> Optional[H]: ...
 
-    async def merge(self, other: "HabitList[H]") -> "HabitList[H]":
-        self_habits = set(self.habits)
-        other_habits = set(other.habits)
-        merged_habits = self_habits.symmetric_difference(other_habits)
-
-        for habit in self_habits.intersection(other_habits):
-            merged_habits.add(await habit.merge(other_habit))
-
-        return HabitList([h for h in merged_habits])
-
 
 class SessionStorage[L: HabitList](Protocol):
     def get_user_habit_list(self) -> Optional[L]: ...
@@ -83,3 +73,5 @@ class UserStorage[L: HabitList](Protocol):
     async def get_user_habit_list(self, user: User) -> Optional[L]: ...
 
     async def save_user_habit_list(self, user: User, habit_list: L) -> None: ...
+
+    async def merge_user_habit_list(self, user: User, habit_list: L) -> None: ...
