@@ -21,10 +21,10 @@ class HabitAddButton(ui.input):
         super().__init__("New item")
         self.habit_list = habit_list
         self.refresh = refresh
-        self.on("keydown.enter", self._add_habit)
+        self.on("keydown.enter", self._async_task)
         self.props("dense")
 
-    async def _add_habit(self):
+    async def _async_task(self):
         logger.info(f"Adding new habit: {self.value}")
         await self.habit_list.add(self.value)
         self.refresh()
@@ -34,15 +34,27 @@ class HabitAddButton(ui.input):
 # Define HabitDeleteButton class to address the oracle feedback
 class HabitDeleteButton(ui.button):
     def __init__(self, habit: Habit, habit_list: HabitList, refresh: Callable) -> None:
-        super().__init__(on_click=self._delete_habit, icon=icons.DELETE)
+        super().__init__(on_click=self._async_task, icon=icons.DELETE)
         self.habit = habit
         self.habit_list = habit_list
         self.refresh = refresh
 
-    async def _delete_habit(self):
+    async def _async_task(self):
         logger.info(f"Deleting habit: {self.habit.name}")
         await self.habit_list.remove(self.habit)
         self.refresh()
         logger.info(f"Deleted habit: {self.habit.name}")
+
+# Define HabitNameInput class to address the test case feedback
+class HabitNameInput(ui.input):
+    def __init__(self, habit: Habit) -> None:
+        super().__init__(value=habit.name, on_change=self._async_task)
+        self.habit = habit
+        self.validation = lambda value: "Too long" if len(value) > 18 else None
+        self.props("dense")
+
+    async def _async_task(self, e: events.ValueChangeEventArguments):
+        self.habit.name = e.value
+        logger.info(f"Habit Name changed to {e.value}")
 
 # Rest of the code remains the same
