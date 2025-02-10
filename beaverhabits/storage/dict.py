@@ -33,8 +33,7 @@ class DictRecord(CheckedRecord, DictStorage):
 
     @property
     def day(self) -> datetime.date:
-        date = datetime.datetime.strptime(self.data["day"], DAY_MASK)
-        return date.date()
+        return datetime.datetime.strptime(self.data["day"], DAY_MASK).date()
 
     @property
     def done(self) -> bool:
@@ -107,7 +106,7 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
     def __init__(self, habits: Optional[List[dict]] = None):
         if habits is None:
             habits = []
-        self.data = {"habits": habits}
+        self.data = {"habits": habits, "order": []}
 
     @property
     def habits(self) -> List[DictHabit]:
@@ -115,10 +114,11 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
 
     @property
     def order(self) -> List[str]:
-        return [habit.id for habit in self.habits]
+        return self.data["order"]
 
     @order.setter
     def order(self, value: List[str]) -> None:
+        self.data["order"] = value
         self.data["habits"] = [habit.data for habit in sorted(self.habits, key=lambda h: value.index(h.id))]
 
     async def get_habit_by(self, habit_id: str) -> Optional[DictHabit]:
@@ -130,9 +130,12 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
     async def add(self, name: str) -> None:
         habit = DictHabit(name)
         self.data["habits"].append(habit.data)
+        if name not in self.data["order"]:
+            self.data["order"].append(name)
 
     async def remove(self, item: DictHabit) -> None:
         self.data["habits"].remove(item.data)
+        self.data["order"].remove(item.name)
 
     async def merge(self, other: "DictHabitList") -> "DictHabitList":
         result = set(self.habits).symmetric_difference(set(other.habits))
@@ -143,4 +146,4 @@ class DictHabitList(HabitList[DictHabit], DictStorage):
                     new_habit = await self_habit.merge(other_habit)
                     result.add(new_habit)
 
-        return DictHabitList(habits=[h.data for h in result])
+        return DictHabitList({"habits": [h.data for h in result], "order": self.order})
