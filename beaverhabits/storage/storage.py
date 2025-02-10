@@ -1,9 +1,12 @@
 import datetime
 from typing import List, Optional, Protocol
+from enum import Enum
 
 from beaverhabits.app.db import User
-from beaverhabits.app.schemas import UserRead
-from beaverhabits.storage.dict import DictHabitList, DictHabit, DictRecord
+
+class HabitStatus(Enum):
+    ACTIVE = 1
+    ARCHIVED = 2
 
 class CheckedRecord(Protocol):
     @property
@@ -13,11 +16,7 @@ class CheckedRecord(Protocol):
     def done(self) -> bool: ...
 
     @done.setter
-    def done(self, value: bool) -> None:
-        self.log_action(f"Set done to {value} for {self.day}")
-
-    def log_action(self, action: str) -> None:
-        print(f"[LOG] {action}")
+    def done(self, value: bool) -> None: ...
 
     def __str__(self):
         return f"{self.day} {'[x]' if self.done else '[ ]'}"
@@ -26,21 +25,25 @@ class CheckedRecord(Protocol):
 
 class Habit[R: CheckedRecord](Protocol):
     @property
-    def id(self) -> str | int: ...
+    def id(self) -> str: ...
 
     @property
     def name(self) -> str: ...
 
     @name.setter
-    def name(self, value: str) -> None:
-        self.log_action(f"Changed name to {value}")
+    def name(self, value: str) -> None: ...
 
     @property
     def star(self) -> bool: ...
 
     @star.setter
-    def star(self, value: int) -> None:
-        self.log_action(f"Set star to {value}")
+    def star(self, value: bool) -> None: ...
+
+    @property
+    def status(self) -> HabitStatus: ...
+
+    @status.setter
+    def status(self, value: HabitStatus) -> None: ...
 
     @property
     def records(self) -> List[R]: ...
@@ -49,11 +52,7 @@ class Habit[R: CheckedRecord](Protocol):
     def ticked_days(self) -> list[datetime.date]:
         return [r.day for r in self.records if r.done]
 
-    async def tick(self, day: datetime.date, done: bool) -> None:
-        self.log_action(f"Ticked {day} with done={done}")
-
-    def log_action(self, action: str) -> None:
-        print(f"[LOG] {self.name} - {action}")
+    async def tick(self, day: datetime.date, done: bool) -> None: ...
 
     def __str__(self):
         return self.name
@@ -69,41 +68,22 @@ class HabitList[H: Habit](Protocol):
     def order(self) -> List[str]: ...
 
     @order.setter
-    def order(self, value: List[str]) -> None:
-        self.log_action(f"Changed order to {value}")
+    def order(self, value: List[str]) -> None: ...
 
-    async def add(self, name: str) -> None:
-        self.log_action(f"Added habit {name}")
+    async def add(self, name: str) -> None: ...
 
-    async def remove(self, item: H) -> None:
-        self.log_action(f"Removed habit {item.name}")
+    async def remove(self, item: H) -> None: ...
 
     async def get_habit_by(self, habit_id: str) -> Optional[H]: ...
-
-    def log_action(self, action: str) -> None:
-        print(f"[LOG] HabitList - {action}")
 
 class SessionStorage[L: HabitList](Protocol):
     def get_user_habit_list(self) -> Optional[L]: ...
 
-    def save_user_habit_list(self, habit_list: L) -> None:
-        self.log_action(f"Saved habit list")
-
-    def log_action(self, action: str) -> None:
-        print(f"[LOG] SessionStorage - {action}")
+    def save_user_habit_list(self, habit_list: L) -> None: ...
 
 class UserStorage[L: HabitList](Protocol):
-    async def get_user_habit_list(self, user: User) -> Optional[L]:
-        self.log_action(f"Fetched habit list for user {user.id}")
+    async def get_user_habit_list(self, user: User) -> Optional[L]: ...
 
-    async def save_user_habit_list(self, user: User, habit_list: L) -> None:
-        self.log_action(f"Saved habit list for user {user.id}")
+    async def save_user_habit_list(self, user: User, habit_list: L) -> None: ...
 
-    async def merge_user_habit_list(self, user: User, other: L) -> L:
-        self.log_action(f"Merged habit list for user {user.id}")
-
-    def log_action(self, action: str) -> None:
-        print(f"[LOG] UserStorage - {action}")
-
-
-In the rewritten code, I have added logging functionality to the `CheckedRecord`, `Habit`, `HabitList`, `SessionStorage`, and `UserStorage` classes to help with debugging and tracking actions. I have also added type hints to the `User` class to improve code clarity and maintainability.
+    async def merge_user_habit_list(self, user: User, other: L) -> L: ...
