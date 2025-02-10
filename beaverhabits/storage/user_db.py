@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from nicegui import background_tasks, core
@@ -8,6 +9,10 @@ from beaverhabits.app.db import User
 from beaverhabits.storage.dict import DictHabitList
 from beaverhabits.storage.storage import UserStorage
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 class DatabasePersistentDict(observables.ObservableDict):
 
@@ -17,7 +22,11 @@ class DatabasePersistentDict(observables.ObservableDict):
 
     def backup(self) -> None:
         async def backup():
-            await crud.update_user_habit_list(self.user, self)
+            try:
+                await crud.update_user_habit_list(self.user, self)
+                logger.info(f"User habit list for {self.user.email} backed up successfully.")
+            except Exception as e:
+                logger.error(f"Failed to backup user habit list for {self.user.email}: {e}")
 
         if core.loop:
             background_tasks.create_lazy(backup(), name=self.user.email)
@@ -35,13 +44,22 @@ class UserDatabaseStorage(UserStorage[DictHabitList]):
         return DictHabitList(d)
 
     async def save_user_habit_list(self, user: User, habit_list: DictHabitList) -> None:
-        await crud.update_user_habit_list(user, habit_list.data)
+        try:
+            await crud.update_user_habit_list(user, habit_list.data)
+            logger.info(f"User habit list for {user.email} saved successfully.")
+        except Exception as e:
+            logger.error(f"Failed to save user habit list for {user.email}: {e}")
 
-    async def merge_user_habit_list(
-        self, user: User, other: DictHabitList
-    ) -> DictHabitList:
+    async def merge_user_habit_list(self, user: User, other: DictHabitList) -> DictHabitList:
         current = await self.get_user_habit_list(user)
         if current is None:
             return other
 
-        return await current.merge(other)
+        merged_list = await current.merge(other)
+        try:
+            await crud.update_user_habit_list(user, merged_list.data)
+            logger.info(f"User habit list for {user.email} merged successfully.")
+        except Exception as e:
+            logger.error(f"Failed to merge user habit list for {user.email}: {e}")
+
+        return merged_list
