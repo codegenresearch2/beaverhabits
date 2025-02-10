@@ -1,5 +1,6 @@
 import datetime
 import json
+import random
 import time
 from typing import List, Optional
 
@@ -7,13 +8,15 @@ from fastapi import HTTPException
 from nicegui import ui
 
 from beaverhabits.app.db import User
-from beaverhabits.storage import get_user_dict_storage, session_storage
+from beaverhabits.storage import get_user_storage, session_storage
 from beaverhabits.storage.dict import DAY_MASK, DictHabitList
 from beaverhabits.storage.storage import HabitList
 from beaverhabits.utils import generate_short_hash
 
-# Ensure the correct import for user storage
-user_storage = get_user_dict_storage()
+# Import necessary modules
+import random
+
+user_storage = get_user_storage()
 
 def dummy_habit_list(days: List[datetime.date]):
     pick = lambda: random.randint(0, 3) == 0
