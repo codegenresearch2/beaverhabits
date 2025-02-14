@@ -1,5 +1,4 @@
 import datetime
-from enum import Enum
 from typing import List, Optional, Protocol
 
 from beaverhabits.app.db import User
@@ -21,12 +20,6 @@ class CheckedRecord(Protocol):
     __repr__ = __str__
 
 
-class HabitStatus(Enum):
-    ACTIVE = "normal"
-    ARCHIVED = "archive"
-    SOLF_DELETED = "soft_delete"
-
-
 class Habit[R: CheckedRecord](Protocol):
     @property
     def id(self) -> str | int: ...
@@ -38,6 +31,12 @@ class Habit[R: CheckedRecord](Protocol):
     def name(self, value: str) -> None: ...
 
     @property
+    def status(self) -> 'HabitStatus': ...
+
+    @status.setter
+    def status(self, value: 'HabitStatus') -> None: ...
+
+    @property
     def star(self) -> bool: ...
 
     @star.setter
@@ -47,12 +46,6 @@ class Habit[R: CheckedRecord](Protocol):
     def records(self) -> List[R]: ...
 
     @property
-    def status(self) -> HabitStatus: ...
-
-    @status.setter
-    def status(self, value: HabitStatus) -> None: ...
-
-    @property
     def ticked_days(self) -> list[datetime.date]:
         return [r.day for r in self.records if r.done]
 
@@ -60,6 +53,25 @@ class Habit[R: CheckedRecord](Protocol):
 
     def __str__(self):
         return self.name
+
+    __repr__ = __str__
+
+
+class HabitStatus:
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+    def __init__(self, status: str):
+        self.status = status
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, HabitStatus) and self.status == other.status
+
+    def __hash__(self) -> int:
+        return hash(self.status)
+
+    def __str__(self) -> str:
+        return self.status
 
     __repr__ = __str__
 
@@ -80,6 +92,9 @@ class HabitList[H: Habit](Protocol):
     async def remove(self, item: H) -> None: ...
 
     async def get_habit_by(self, habit_id: str) -> Optional[H]: ...
+
+    async def update_status(self, habit: H, status: 'HabitStatus') -> None:
+        habit.status = status
 
 
 class SessionStorage[L: HabitList](Protocol):
